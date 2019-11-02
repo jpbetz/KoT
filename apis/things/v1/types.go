@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -37,11 +38,12 @@ type Value struct {
 	// +kubebuilder:validation:Required
 	Name string `json:"name"`
 	// float is a floating point input value.
-	Float *float64 `json:"float"`
+	// +kubebuilder:validation:Type=number
+	Float *resource.Quantity `json:"float"`
 	// boolean is a true or false value.
 	Boolean *bool `json:"boolean"`
 	// integer is a integer value.
-	Integer *float64 `json:"float"`
+	Integer *int32 `json:"float"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
