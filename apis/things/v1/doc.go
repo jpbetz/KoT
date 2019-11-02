@@ -3,4 +3,4 @@
 // +versionName=v1
 // +kubebuilder:validation:Optional
 
-package v1alpha1
+package v1
