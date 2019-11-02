@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -38,7 +39,7 @@ type Value struct {
 	Name string `json:"name"`
 	// value is the floating point input value.
 	// +kubebuilder:validation:Required
-	Value float64 `json:"value"`
+	Value resource.Quantity `json:"value"`
 	// +kubebuilder:validation:Default=float
 	// +kubebuilder:validation:Enum={"integer","float","boolean"}
 	Type string `json:"type"`
@@ -53,6 +54,9 @@ type DeviceList struct {
 
 	Items []Device `json:"items"`
 }
+
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // Module is a section in the deep see station, connected to a number of devices.
 type Module struct {
