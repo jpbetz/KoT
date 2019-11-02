@@ -1,6 +1,6 @@
 package types
 
-type DeviceHub struct {
+type SimulatedDevices struct {
 	Devices []*Device `json:"devices"`
 }
 
@@ -26,7 +26,7 @@ type ValueChangedMessage struct {
 }
 
 
-func (d *DeviceHub) GetDevice(id string) *Device {
+func (d *SimulatedDevices) GetDevice(id string) *Device {
 	for _, device := range d.Devices {
 		if device.ID == id {
 			return device

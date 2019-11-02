@@ -14,34 +14,46 @@ import (
 
 func main() {
 	s := &server{}
-	s.deviceHub = &types.DeviceHub{
+	s.simulatedDevices = &types.SimulatedDevices{
 		Devices: []*types.Device{
 			{
-				ID: "device1",
+				ID: "command",
 				Outputs: []*types.Output{
-					{ID: "slider", Value: 85.0},
-					{ID: "switch", Value: 1.0},
+					{ID: "pressure", Value: 10.0},
+					{ID: "waterSensor", Value: 0.0},
 				},
 				Inputs: []*types.Input{
-					{ID: "value", Value: 85.0},
-					{ID: "light", Value: 1.0},
+					{ID: "pumpsActive", Value: 1.0},
+					{ID: "alarm", Value: 0.0},
 				},
 			},
 			{
-				ID: "device2",
+				ID: "crew",
 				Outputs: []*types.Output{
-					{ID: "slider", Value: 85.0},
-					{ID: "switch", Value: 1.0},
+					{ID: "pressure", Value: 10.0},
+					{ID: "waterSensor", Value: 0.0},
 				},
 				Inputs: []*types.Input{
-					{ID: "value", Value: 85.0},
-					{ID: "light", Value: 1.0},
+					{ID: "pumpsActive", Value: 1.0},
+					{ID: "alarm", Value: 0.0},
+				},
+			},
+			{
+				ID: "research",
+				Outputs: []*types.Output{
+					{ID: "pressure", Value: 10.0},
+					{ID: "waterSensor", Value: 0.0},
+				},
+				Inputs: []*types.Input{
+					{ID: "pumpsActive", Value: 1.0},
+					{ID: "alarm", Value: 0.0},
 				},
 			},
 		},
 	}
 	s.websockets = newWebsocketManager()
 	go s.websockets.run()
+	go s.simulate()
 	router := mux.NewRouter()
 	router.HandleFunc("/api/", s.deviceHubHandler)
 	router.HandleFunc("/api/devices/{deviceID}/inputs/{inputID}", s.inputHandler)
@@ -61,9 +73,46 @@ func main() {
 }
 
 type server struct {
-	mu         sync.Mutex
-	deviceHub  *types.DeviceHub
-	websockets *WebsocketManager
+	mu               sync.Mutex
+	simulatedDevices *types.SimulatedDevices
+	websockets       *WebsocketManager
+}
+
+const (
+	targetPressure = 10.0 // unit: bars, for depth of 90 meters
+	lowPressure = 8.0
+	emergencyPressure = 6.0
+	highPressure = 12.0
+	pressureDropPerSec = 0.05
+)
+func (s *server) simulate() {
+	for range time.Tick(50 * time.Millisecond) {
+		for _, d := range s.simulatedDevices.Devices {
+			func() {
+				s.mu.Lock()
+				defer s.mu.Unlock()
+				pressure := d.GetOutput("pressure")
+				active := d.GetInput("pumpsActive").Value
+				if active > 3 {
+					active = 3
+				}
+				if active < 0.9 || active > 1.9 {
+					if active < 0.9 {
+						pressure.Value -= 0.1 / 20.0
+					}
+					if active > 1.9 {
+						pressure.Value += 0.05 * active / 20.0
+					}
+
+					msg := &types.ValueChangedMessage{
+						Path: d.ID + "." + pressure.ID,
+						Value: pressure.Value,
+					}
+					s.websockets.broadcast <-msg
+				}
+			}()
+		}
+	}
 }
 
 func (s *server) deviceHubHandler(w http.ResponseWriter, r *http.Request) {
@@ -73,7 +122,7 @@ func (s *server) deviceHubHandler(w http.ResponseWriter, r *http.Request) {
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
-		js, err := json.Marshal(s.deviceHub)
+		js, err := json.Marshal(s.simulatedDevices)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -91,14 +140,14 @@ func (s *server) deviceHubHandler(w http.ResponseWriter, r *http.Request) {
 }
 	
 func (s *server) inputHandler(w http.ResponseWriter, r *http.Request) {
-	//log.Println(r.Method, r.URL.Path, r.RemoteAddr, r.UserAgent())
+	log.Println(r.Method, r.URL.Path, r.RemoteAddr, r.UserAgent())
 	vars := mux.Vars(r)
 	deviceID := vars["deviceID"]
 	inputID := vars["inputID"]
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	device := s.deviceHub.GetDevice(deviceID)
+	device := s.simulatedDevices.GetDevice(deviceID)
 	if device == nil {
 		http.NotFound(w, r)
 		return
@@ -142,14 +191,14 @@ func (s *server) inputHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) outputHandler(w http.ResponseWriter, r *http.Request) {
-	//log.Println(r.Method, r.URL.Path, r.RemoteAddr, r.UserAgent())
+	log.Println(r.Method, r.URL.Path, r.RemoteAddr, r.UserAgent())
 	vars := mux.Vars(r)
 	deviceID := vars["deviceID"]
 	outputID := vars["outputID"]
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	device := s.deviceHub.GetDevice(deviceID)
+	device := s.simulatedDevices.GetDevice(deviceID)
 	if device == nil {
 		http.NotFound(w, r)
 		return

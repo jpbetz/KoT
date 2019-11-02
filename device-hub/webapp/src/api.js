@@ -62,3 +62,13 @@ export function setOutput(deviceID, outputID, value) {
 	body: JSON.stringify({ value: value }),
     })
 }
+
+export function setInput(deviceID, outputID, value) {
+	fetch("/api/devices/" + deviceID + "/inputs/" + outputID, {
+		method: 'PUT',
+		headers: {
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({ value: value }),
+	})
+}

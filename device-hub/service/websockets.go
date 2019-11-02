@@ -30,7 +30,7 @@ func websocketHandler(s *server, w http.ResponseWriter, r *http.Request) {
 	func () {
 		s.mu.Lock()
 		defer s.mu.Unlock()
-		for _, device := range s.deviceHub.Devices {
+		for _, device := range s.simulatedDevices.Devices {
 			for _, input := range device.Inputs {
 				m := &types.ValueChangedMessage{
 					Path: device.ID + "." + input.ID,
