@@ -25,3 +25,11 @@ type DeviceListerExpansion interface{}
 // DeviceNamespaceListerExpansion allows custom methods to be added to
 // DeviceNamespaceLister.
 type DeviceNamespaceListerExpansion interface{}
+
+// ModuleListerExpansion allows custom methods to be added to
+// ModuleLister.
+type ModuleListerExpansion interface{}
+
+// ModuleNamespaceListerExpansion allows custom methods to be added to
+// ModuleNamespaceLister.
+type ModuleNamespaceListerExpansion interface{}

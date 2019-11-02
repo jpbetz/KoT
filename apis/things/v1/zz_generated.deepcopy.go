@@ -143,8 +143,8 @@ func (in *Value) DeepCopyInto(out *Value) {
 	*out = *in
 	if in.Float != nil {
 		in, out := &in.Float, &out.Float
-		*out = new(float64)
-		**out = **in
+		x := (*in).DeepCopy()
+		*out = &x
 	}
 	if in.Boolean != nil {
 		in, out := &in.Boolean, &out.Boolean
@@ -153,7 +153,7 @@ func (in *Value) DeepCopyInto(out *Value) {
 	}
 	if in.Integer != nil {
 		in, out := &in.Integer, &out.Integer
-		*out = new(float64)
+		*out = new(int32)
 		**out = **in
 	}
 	return
