@@ -60,6 +60,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		// Group=things.kubecon.com, Version=v1alpha1
 	case v1alpha1.SchemeGroupVersion.WithResource("devices"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Things().V1alpha1().Devices().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("modules"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Things().V1alpha1().Modules().Informer()}, nil
 
 	}
 

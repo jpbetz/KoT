@@ -27,6 +27,7 @@ import (
 type ThingsV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	DevicesGetter
+	ModulesGetter
 }
 
 // ThingsV1alpha1Client is used to interact with features provided by the things.kubecon.com group.
@@ -36,6 +37,10 @@ type ThingsV1alpha1Client struct {
 
 func (c *ThingsV1alpha1Client) Devices(namespace string) DeviceInterface {
 	return newDevices(c, namespace)
+}
+
+func (c *ThingsV1alpha1Client) Modules(namespace string) ModuleInterface {
+	return newModules(c, namespace)
 }
 
 // NewForConfig creates a new ThingsV1alpha1Client for the given config.
