@@ -42,8 +42,16 @@ type Value struct {
 	Value resource.Quantity `json:"value"`
 	// +kubebuilder:validation:Default=float
 	// +kubebuilder:validation:Enum={"integer","float","boolean"}
-	Type string `json:"type"`
+	Type Type `json:"type"`
 }
+
+type Type string
+
+const (
+	IntegerType Type = "integer"
+	BooleanType Type = "booleam"
+	FloatType   Type = "float"
+)
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
