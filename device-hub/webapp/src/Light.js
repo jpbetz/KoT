@@ -6,7 +6,7 @@ class Light extends React.Component {
     constructor(props) {
       super(props);
       this.state = {sensor: {value: 0}};
-      this.path = this.props.deviceID + "." + this.props.ID
+      this.path = this.props.path
     }
     componentDidMount() {
 	    api.addOnUpdatedListener(this.path, this.onValueChanged.bind(this));

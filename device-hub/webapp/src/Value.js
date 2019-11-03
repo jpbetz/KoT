@@ -5,7 +5,7 @@ class ValueViewer extends React.Component {
   constructor(props) {
     super(props);
     this.state = {sensor: {value: 0}};
-    this.path = this.props.deviceID + "." + this.props.ID
+    this.path = this.props.path
   }
   componentDidMount() {
     api.addOnUpdatedListener(this.path, this.onValueChanged.bind(this));
@@ -22,7 +22,7 @@ class ValueViewer extends React.Component {
   render() {
     return (
       <span>
-        {this.state.sensor.value.toFixed(2)}
+        {this.state.sensor.value.toFixed(this.props.fractionDigits)}
       </span>
     );
   }

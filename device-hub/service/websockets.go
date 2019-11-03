@@ -8,7 +8,7 @@ import (
 
 	"github.com/gorilla/websocket"
 
-	"jpbetz/KoT/device-hub/service/types"
+	"github.com/jpbetz/KoT/device-hub/service/types"
 )
 
 func websocketHandler(s *server, w http.ResponseWriter, r *http.Request) {
@@ -30,30 +30,32 @@ func websocketHandler(s *server, w http.ResponseWriter, r *http.Request) {
 	func () {
 		s.mu.Lock()
 		defer s.mu.Unlock()
-		for _, device := range s.simulatedDevices.Devices {
-			for _, input := range device.Inputs {
-				m := &types.ValueChangedMessage{
-					Path: device.ID + "." + input.ID,
-					Value: input.Value,
+		for _, module := range s.modules.Modules {
+			for _, device := range module.GetDevices() {
+				for _, input := range device.Inputs {
+					m := &types.ValueChangedMessage{
+						Path: module.ID + "." + device.ID + "." + input.ID,
+						Value: input.Value,
+					}
+					data, err := json.Marshal(m)
+					if err != nil {
+						log.Printf("error: %v", err)
+						continue
+					}
+					client.send <- data
 				}
-				data, err := json.Marshal(m)
-				if err != nil {
-					log.Printf("error: %v", err)
-					continue
+				for _, output := range device.Outputs {
+					m := &types.ValueChangedMessage{
+						Path:  module.ID + "." + device.ID + "." + output.ID,
+						Value: output.Value,
+					}
+					data, err := json.Marshal(m)
+					if err != nil {
+						log.Printf("error: %v", err)
+						continue
+					}
+					client.send <- data
 				}
-				client.send <- data
-			}
-			for _, output := range device.Outputs {
-				m := &types.ValueChangedMessage{
-					Path: device.ID + "." + output.ID,
-					Value: output.Value,
-				}
-				data, err := json.Marshal(m)
-				if err != nil {
-					log.Printf("error: %v", err)
-					continue
-				}
-				client.send <- data
 			}
 		}
 	}()

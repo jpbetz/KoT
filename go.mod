@@ -6,6 +6,8 @@ require (
 	github.com/coreos/bbolt v1.3.1-coreos.6 // indirect
 	github.com/coreos/etcd v3.3.15+incompatible // indirect
 	github.com/gorilla/handlers v1.4.2
+	github.com/gorilla/mux v1.7.3
+	github.com/gorilla/websocket v1.4.0
 	github.com/jpbetz/KoT/controller v0.0.0-20191102201810-4280cbfdb5ea // indirect
 	github.com/spf13/pflag v1.0.3
 	k8s.io/apiextensions-apiserver v0.0.0-20191101231532-ec619caef027

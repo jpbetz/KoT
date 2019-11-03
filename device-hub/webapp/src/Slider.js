@@ -6,7 +6,7 @@ class SensorSlider extends React.Component {
   constructor(props) {
     super(props);
     this.state = {sensor: {value: 0}};
-    this.path = this.props.deviceID + "." + this.props.ID
+    this.path = this.props.path
   }
 
   componentDidMount() {
@@ -24,9 +24,9 @@ class SensorSlider extends React.Component {
   onSliderChanged(event, value) {
     this.setState({sensor: {value: value}}) // pre-emptively update UI
     if(this.props.input) {
-      api.setInput(this.props.deviceID, this.props.ID, value)
+      api.setInput(this.path, value)
     } else {
-      api.setOutput(this.props.deviceID, this.props.ID, value)
+      api.setOutput(this.path, value)
     }
   }
 

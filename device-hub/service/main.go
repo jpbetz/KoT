@@ -9,53 +9,40 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"jpbetz/KoT/device-hub/service/types"
+	"github.com/jpbetz/KoT/device-hub/service/types"
 )
 
 func main() {
 	s := &server{}
-	s.simulatedDevices = &types.SimulatedDevices{
-		Devices: []*types.Device{
+	s.modules = &types.Modules{
+		Modules: []*types.Module{
 			{
 				ID: "command",
-				Outputs: []*types.Output{
-					{ID: "pressure", Value: 10.0},
-					{ID: "waterSensor", Value: 0.0},
+				PressureSensor: &types.Device{
+					ID: "pressureSensor1",
+					Outputs: []*types.Output{
+						{ID: "pressure", Value: 10.0},
+					},
 				},
-				Inputs: []*types.Input{
-					{ID: "pumpsActive", Value: 1.0},
-					{ID: "alarm", Value: 0.0},
+				WaterAlarm: &types.Device{
+					ID: "alarm1",
+					Outputs: []*types.Output{
+						{ID: "alarm", Value: 0.0},
+					},
 				},
-			},
-			{
-				ID: "crew",
-				Outputs: []*types.Output{
-					{ID: "pressure", Value: 10.0},
-					{ID: "waterSensor", Value: 0.0},
-				},
-				Inputs: []*types.Input{
-					{ID: "pumpsActive", Value: 1.0},
-					{ID: "alarm", Value: 0.0},
-				},
-			},
-			{
-				ID: "research",
-				Outputs: []*types.Output{
-					{ID: "pressure", Value: 10.0},
-					{ID: "waterSensor", Value: 0.0},
-				},
-				Inputs: []*types.Input{
-					{ID: "pumpsActive", Value: 1.0},
-					{ID: "alarm", Value: 0.0},
+				Pump: &types.Device{
+					ID: "pumps1",
+					Inputs: []*types.Input{
+						{ID: "activeCount", Value: 1.0},
+					},
 				},
 			},
 		},
 	}
 	s.websockets = newWebsocketManager()
 	go s.websockets.run()
-	go s.simulate()
 	router := mux.NewRouter()
-	router.HandleFunc("/api/", s.deviceHubHandler)
+	router.HandleFunc("/api/modules", s.modulesHandler)
 	router.HandleFunc("/api/devices/{deviceID}/inputs/{inputID}", s.inputHandler)
 	router.HandleFunc("/api/devices/{deviceID}/outputs/{outputID}", s.outputHandler)
 	router.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
@@ -73,9 +60,9 @@ func main() {
 }
 
 type server struct {
-	mu               sync.Mutex
-	simulatedDevices *types.SimulatedDevices
-	websockets       *WebsocketManager
+	mu         sync.Mutex
+	modules    *types.Modules
+	websockets *WebsocketManager
 }
 
 const (
@@ -85,44 +72,15 @@ const (
 	highPressure = 12.0
 	pressureDropPerSec = 0.05
 )
-func (s *server) simulate() {
-	for range time.Tick(50 * time.Millisecond) {
-		for _, d := range s.simulatedDevices.Devices {
-			func() {
-				s.mu.Lock()
-				defer s.mu.Unlock()
-				pressure := d.GetOutput("pressure")
-				active := d.GetInput("pumpsActive").Value
-				if active > 3 {
-					active = 3
-				}
-				if active < 0.9 || active > 1.9 {
-					if active < 0.9 {
-						pressure.Value -= 0.1 / 20.0
-					}
-					if active > 1.9 {
-						pressure.Value += 0.05 * active / 20.0
-					}
 
-					msg := &types.ValueChangedMessage{
-						Path: d.ID + "." + pressure.ID,
-						Value: pressure.Value,
-					}
-					s.websockets.broadcast <-msg
-				}
-			}()
-		}
-	}
-}
-
-func (s *server) deviceHubHandler(w http.ResponseWriter, r *http.Request) {
+func (s *server) modulesHandler(w http.ResponseWriter, r *http.Request) {
 	//log.Println(r.Method, r.URL.Path, r.RemoteAddr, r.UserAgent())
 	switch r.Method {
 	case "GET":
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
-		js, err := json.Marshal(s.simulatedDevices)
+		js, err := json.Marshal(s.modules)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -132,6 +90,18 @@ func (s *server) deviceHubHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Printf("error: %v", err)
 		}
+		return
+	case "PUT":
+		decoder := json.NewDecoder(r.Body)
+		updatedModule := &types.Module{}
+		err := decoder.Decode(updatedModule)
+		if err != nil {
+			log.Printf("error decoding request: %v", err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		s.modules.PutModule(updatedModule)
+
 		return
 	default:
 		http.Error(w, "", http.StatusMethodNotAllowed)
@@ -147,7 +117,7 @@ func (s *server) inputHandler(w http.ResponseWriter, r *http.Request) {
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	device := s.simulatedDevices.GetDevice(deviceID)
+	module, device := s.modules.GetDevice(deviceID)
 	if device == nil {
 		http.NotFound(w, r)
 		return
@@ -179,7 +149,7 @@ func (s *server) inputHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		input.Value = updatedInput.Value
 		msg := &types.ValueChangedMessage{
-			Path: deviceID + "." + inputID,
+			Path: module.ID + "." + deviceID + "." + inputID,
 			Value: input.Value,
 		}
 		s.websockets.broadcast <-msg
@@ -198,7 +168,7 @@ func (s *server) outputHandler(w http.ResponseWriter, r *http.Request) {
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	device := s.simulatedDevices.GetDevice(deviceID)
+	module, device := s.modules.GetDevice(deviceID)
 	if device == nil {
 		http.NotFound(w, r)
 		return
@@ -230,7 +200,7 @@ func (s *server) outputHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		output.Value = updatedOutput.Value
 		msg := &types.ValueChangedMessage{
-			Path: deviceID + "." + outputID,
+			Path: module.ID + "." + deviceID + "." + outputID,
 			Value: output.Value,
 		}
 		s.websockets.broadcast <-msg
