@@ -54,15 +54,15 @@ func (f *genericInformer) Lister() cache.GenericLister {
 // TODO extend this to unknown resources with a client pool
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
-	// Group=deepsea.kubecon.com, Version=v1alpha1
+	// Group=deepsea.kubecon.io, Version=v1alpha1
 	case v1alpha1.SchemeGroupVersion.WithResource("modules"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Deepsea().V1alpha1().Modules().Informer()}, nil
 
-		// Group=things.kubecon.com, Version=v1
+		// Group=things.kubecon.io, Version=v1
 	case v1.SchemeGroupVersion.WithResource("devices"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Things().V1().Devices().Informer()}, nil
 
-		// Group=things.kubecon.com, Version=v1alpha1
+		// Group=things.kubecon.io, Version=v1alpha1
 	case thingsv1alpha1.SchemeGroupVersion.WithResource("devices"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Things().V1alpha1().Devices().Informer()}, nil
 

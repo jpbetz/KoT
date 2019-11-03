@@ -1,4 +1,4 @@
-apiVersion: things.kubecon.com/v1alpha1
+apiVersion: things.kubecon.io/v1alpha1
 kind: Device
 metadata:
   name: switch-1

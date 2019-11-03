@@ -17,16 +17,16 @@ func TestConvert(t *testing.T) {
 	}{
 		{
 			"empty v1alpha1",
-			`{"apiVersion":"things.kubecon.com/v1alpha1","kind":"Device","spec":{}}`,
-			"things.kubecon.com/v1",
-			`{"apiVersion":"things.kubecon.com/v1","kind":"Device","spec":{}}`,
+			`{"apiVersion":"things.kubecon.io/v1alpha1","kind":"Device","spec":{}}`,
+			"things.kubecon.io/v1",
+			`{"apiVersion":"things.kubecon.io/v1","kind":"Device","spec":{}}`,
 			false,
 		},
 		{
 			"v1alpha1 with spec",
-			`{"apiVersion":"things.kubecon.com/v1alpha1","kind":"Device","spec":{"inputs":[{"name":"Switch","type":"Float","value":"1"}]}}`,
-			"things.kubecon.com/v1",
-			`{"apiVersion":"things.kubecon.com/v1","kind":"Device","spec":{"inputs":[{"name":"Switch","float":"1"}]}}`,
+			`{"apiVersion":"things.kubecon.io/v1alpha1","kind":"Device","spec":{"inputs":[{"name":"Switch","type":"Float","value":"1"}]}}`,
+			"things.kubecon.io/v1",
+			`{"apiVersion":"things.kubecon.io/v1","kind":"Device","spec":{"inputs":[{"name":"Switch","float":"1"}]}}`,
 			false,
 		},
 	}

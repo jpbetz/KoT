@@ -38,7 +38,7 @@ type ModuleReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=things.kubecon.com,resources=modules,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=things.kubecon.io,resources=modules,verbs=get;list;watch;create;update;patch;delete
 
 func (r *ModuleReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()

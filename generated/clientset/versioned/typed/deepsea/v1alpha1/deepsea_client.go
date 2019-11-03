@@ -29,7 +29,7 @@ type DeepseaV1alpha1Interface interface {
 	ModulesGetter
 }
 
-// DeepseaV1alpha1Client is used to interact with features provided by the deepsea.kubecon.com group.
+// DeepseaV1alpha1Client is used to interact with features provided by the deepsea.kubecon.io group.
 type DeepseaV1alpha1Client struct {
 	restClient rest.Interface
 }

@@ -26,20 +26,20 @@ metadata:
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: devices.thing.kubecon.com-reader
+  name: devices.thing.kubecon.io-reader
 rules:
-- apiGroups: ["things.kubecon.com"]
+- apiGroups: ["things.kubecon.io"]
   resources: ["devices"]
   verbs: ["get", "watch", "list"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: deepsea-admission-webhook-devices.thing.kubecon.com-reader
+  name: deepsea-admission-webhook-devices.thing.kubecon.io-reader
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: devices.thing.kubecon.com-reader
+  name: devices.thing.kubecon.io-reader
 subjects:
 - kind: ServiceAccount
   name: admission-webhook
@@ -75,7 +75,7 @@ spec:
       serviceAccountName: admission-webhook
       containers:
       - name: webhook
-        image: docker.io/sttts/deepsea-admission-webhook@sha256:c7bbaa57f4557f06d3d19fc1a7f2d87baaaba3ce61b65c17074e9bb5d861eacd
+        image: docker.io/sttts/deepsea-admission-webhook@sha256:17d843f39048b2e805f8a317ed1f8c22c3e7e649890dd0794c4e7bf33df815f5
         imagePullPolicy: Always
         command: ["/admission-webhook"]
         args:
@@ -96,16 +96,16 @@ spec:
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
-  name: deepsea.kubecon.com
+  name: deepsea.kubecon.io
 webhooks:
-- name: deepsea.kubecon.com
+- name: deepsea.kubecon.io
   sideEffects: None
   failurePolicy: Fail
   admissionReviewVersions:
   - v1beta1
   rules:
   - apiGroups:
-    - "deepsea.kubecon.com"
+    - "deepsea.kubecon.io"
     apiVersions:
     - v1alpha1
     operations:

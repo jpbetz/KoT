@@ -29,7 +29,7 @@ type ThingsV1Interface interface {
 	DevicesGetter
 }
 
-// ThingsV1Client is used to interact with features provided by the things.kubecon.com group.
+// ThingsV1Client is used to interact with features provided by the things.kubecon.io group.
 type ThingsV1Client struct {
 	restClient rest.Interface
 }
