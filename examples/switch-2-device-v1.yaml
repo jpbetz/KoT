@@ -1,0 +1,10 @@
+apiVersion: things.kubecon.com/v1
+kind: Device
+metadata:
+  name: switch-2
+  namespace: things
+spec:
+  inputs:
+  - name: Switch
+    boolean: true
+status: {}

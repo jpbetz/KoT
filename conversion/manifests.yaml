@@ -53,7 +53,7 @@ spec:
       serviceAccountName: conversion-webhook
       containers:
       - name: webhook
-        image: docker.io/sttts/things-conversion-webhook@sha256:9c632a8cbdd694d2f1ad4b1ee94bd49308587deca7d8e1b61057ab3f3831739f
+        image: docker.io/sttts/things-conversion-webhook@sha256:390106b7cae0f267799dfcf08df1b4bdeb38bdd561077cb2e960c1aab953c078
         imagePullPolicy: Always
         command: ["/conversion-webhook"]
         args:
