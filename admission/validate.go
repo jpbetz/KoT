@@ -21,7 +21,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	admissionv1 "k8s.io/api/admission/v1"
+	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -30,8 +30,8 @@ import (
 	"k8s.io/apiserver/pkg/endpoints/handlers/negotiation"
 	"k8s.io/apiserver/pkg/endpoints/handlers/responsewriters"
 
+	"github.com/jpbetz/KoT/apis/deepsea/install"
 	deepseev1alpha1 "github.com/jpbetz/KoT/apis/deepsea/v1alpha1"
-	"github.com/jpbetz/KoT/apis/things/install"
 	informers "github.com/jpbetz/KoT/generated/informers/externalversions"
 )
 
@@ -41,7 +41,7 @@ var (
 )
 
 func init() {
-	utilruntime.Must(admissionv1.AddToScheme(scheme))
+	utilruntime.Must(admissionv1beta1.AddToScheme(scheme))
 	install.Install(scheme)
 }
 
@@ -63,13 +63,13 @@ func ModuleValidation(informers informers.SharedInformerFactory) func(http.Respo
 		}
 
 		// decode body as admission review
-		reviewGVK := admissionv1.SchemeGroupVersion.WithKind("AdmissionReview")
-		obj, gvk, err := codecs.UniversalDeserializer().Decode(body, &reviewGVK, &admissionv1.AdmissionReview{})
+		reviewGVK := admissionv1beta1.SchemeGroupVersion.WithKind("AdmissionReview")
+		obj, gvk, err := codecs.UniversalDeserializer().Decode(body, &reviewGVK, &admissionv1beta1.AdmissionReview{})
 		if err != nil {
 			responsewriters.InternalError(w, req, fmt.Errorf("failed to decode body: %v", err))
 			return
 		}
-		review, ok := obj.(*admissionv1.AdmissionReview)
+		review, ok := obj.(*admissionv1beta1.AdmissionReview)
 		if !ok {
 			responsewriters.InternalError(w, req, fmt.Errorf("unexpected GroupVersionKind: %s", gvk))
 			return
@@ -78,7 +78,7 @@ func ModuleValidation(informers informers.SharedInformerFactory) func(http.Respo
 			responsewriters.InternalError(w, req, fmt.Errorf("unexpected nil request"))
 			return
 		}
-		review.Response = &admissionv1.AdmissionResponse{
+		review.Response = &admissionv1beta1.AdmissionResponse{
 			UID: review.Request.UID,
 		}
 
