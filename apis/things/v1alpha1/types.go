@@ -40,17 +40,17 @@ type Value struct {
 	// value is the floating point input value.
 	// +kubebuilder:validation:Required
 	Value resource.Quantity `json:"value"`
-	// +kubebuilder:validation:Default=float
-	// +kubebuilder:validation:Enum={"integer","float","boolean"}
+	// +kubebuilder:default=Float
+	// +kubebuilder:validation:Enum={"Integer","Float","Boolean"}
 	Type Type `json:"type"`
 }
 
 type Type string
 
 const (
-	IntegerType Type = "integer"
-	BooleanType Type = "booleam"
-	FloatType   Type = "float"
+	IntegerType Type = "Integer"
+	BooleanType Type = "Boolean"
+	FloatType   Type = "Float"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

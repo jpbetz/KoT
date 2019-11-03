@@ -18,7 +18,7 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-VERSION=v0.2.1-37-ga3cca5d
+VERSION=v0.2.2-1-g747dd959
 CONTROLLER_GEN_BASENAME=controller-gen-$(uname -s | tr '[:upper:]' '[:lower:]')-amd64
 CONTROLLER_GEN=${CONTROLLER_GEN_BASENAME}-${VERSION}
 

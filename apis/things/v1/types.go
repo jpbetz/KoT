@@ -38,12 +38,11 @@ type Value struct {
 	// +kubebuilder:validation:Required
 	Name string `json:"name"`
 	// float is a floating point input value.
-	// +kubebuilder:validation:Type=number
-	Float *resource.Quantity `json:"float"`
+	Float *resource.Quantity `json:"float,omitempty"`
 	// boolean is a true or false value.
-	Boolean *bool `json:"boolean"`
+	Boolean *bool `json:"boolean,omitempty"`
 	// integer is a integer value.
-	Integer *int32 `json:"float"`
+	Integer *int32 `json:"integer,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
