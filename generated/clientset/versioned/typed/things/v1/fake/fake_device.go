@@ -34,9 +34,9 @@ type FakeDevices struct {
 	ns   string
 }
 
-var devicesResource = schema.GroupVersionResource{Group: "things.kubecon.com", Version: "v1", Resource: "devices"}
+var devicesResource = schema.GroupVersionResource{Group: "things.kubecon.io", Version: "v1", Resource: "devices"}
 
-var devicesKind = schema.GroupVersionKind{Group: "things.kubecon.com", Version: "v1", Kind: "Device"}
+var devicesKind = schema.GroupVersionKind{Group: "things.kubecon.io", Version: "v1", Kind: "Device"}
 
 // Get takes name of the device, and returns the corresponding device object, and an error if there is any.
 func (c *FakeDevices) Get(name string, options v1.GetOptions) (result *thingsv1.Device, err error) {

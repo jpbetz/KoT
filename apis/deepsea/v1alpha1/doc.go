@@ -1,5 +1,5 @@
 // +k8s:deepcopy-gen=package
-// +groupName=deepsea.kubecon.com
+// +groupName=deepsea.kubecon.io
 // +versionName=v1alpha1
 // +kubebuilder:validation:Optional
 
