@@ -1,4 +1,4 @@
-module github.com/jpbetz/KoT
+module github.com/jpbetz/KoT/apis
 
 go 1.12
 

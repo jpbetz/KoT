@@ -14,14 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package conversion
 
 import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
 
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -38,7 +38,7 @@ var (
 )
 
 func init() {
-	utilruntime.Must(apiextensionsv1beta1.AddToScheme(scheme))
+	utilruntime.Must(apiextensionsv1.AddToScheme(scheme))
 	install.Install(scheme)
 }
 
@@ -51,13 +51,13 @@ func Serve(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// decode body as conversion review
-	reviewGVK := apiextensionsv1beta1.SchemeGroupVersion.WithKind("ConversionReview")
-	obj, gvk, err := codecs.UniversalDeserializer().Decode(body, &reviewGVK, &apiextensionsv1beta1.ConversionReview{})
+	reviewGVK := apiextensionsv1.SchemeGroupVersion.WithKind("ConversionReview")
+	obj, gvk, err := codecs.UniversalDeserializer().Decode(body, &reviewGVK, &apiextensionsv1.ConversionReview{})
 	if err != nil {
 		responsewriters.InternalError(w, req, fmt.Errorf("failed to decode body: %v", err))
 		return
 	}
-	review, ok := obj.(*apiextensionsv1beta1.ConversionReview)
+	review, ok := obj.(*apiextensionsv1.ConversionReview)
 	if !ok {
 		responsewriters.InternalError(w, req, fmt.Errorf("unexpected GroupVersionKind: %s", gvk))
 		return
@@ -68,7 +68,7 @@ func Serve(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// convert objects
-	review.Response = &apiextensionsv1beta1.ConversionResponse{
+	review.Response = &apiextensionsv1.ConversionResponse{
 		UID: review.Request.UID,
 		Result: metav1.Status{
 			Status: metav1.StatusSuccess,
