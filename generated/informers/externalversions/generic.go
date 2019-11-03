@@ -21,8 +21,9 @@ package externalversions
 import (
 	"fmt"
 
+	v1alpha1 "github.com/jpbetz/KoT/apis/deepsea/v1alpha1"
 	v1 "github.com/jpbetz/KoT/apis/things/v1"
-	v1alpha1 "github.com/jpbetz/KoT/apis/things/v1alpha1"
+	thingsv1alpha1 "github.com/jpbetz/KoT/apis/things/v1alpha1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
 )
@@ -53,15 +54,17 @@ func (f *genericInformer) Lister() cache.GenericLister {
 // TODO extend this to unknown resources with a client pool
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
-	// Group=things.kubecon.com, Version=v1
+	// Group=deepsea.kubecon.com, Version=v1alpha1
+	case v1alpha1.SchemeGroupVersion.WithResource("modules"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Deepsea().V1alpha1().Modules().Informer()}, nil
+
+		// Group=things.kubecon.com, Version=v1
 	case v1.SchemeGroupVersion.WithResource("devices"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Things().V1().Devices().Informer()}, nil
 
 		// Group=things.kubecon.com, Version=v1alpha1
-	case v1alpha1.SchemeGroupVersion.WithResource("devices"):
+	case thingsv1alpha1.SchemeGroupVersion.WithResource("devices"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Things().V1alpha1().Devices().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("modules"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Things().V1alpha1().Modules().Informer()}, nil
 
 	}
 

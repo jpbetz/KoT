@@ -20,6 +20,8 @@ package fake
 
 import (
 	clientset "github.com/jpbetz/KoT/generated/clientset/versioned"
+	deepseav1alpha1 "github.com/jpbetz/KoT/generated/clientset/versioned/typed/deepsea/v1alpha1"
+	fakedeepseav1alpha1 "github.com/jpbetz/KoT/generated/clientset/versioned/typed/deepsea/v1alpha1/fake"
 	thingsv1 "github.com/jpbetz/KoT/generated/clientset/versioned/typed/things/v1"
 	fakethingsv1 "github.com/jpbetz/KoT/generated/clientset/versioned/typed/things/v1/fake"
 	thingsv1alpha1 "github.com/jpbetz/KoT/generated/clientset/versioned/typed/things/v1alpha1"
@@ -77,6 +79,11 @@ func (c *Clientset) Tracker() testing.ObjectTracker {
 }
 
 var _ clientset.Interface = &Clientset{}
+
+// DeepseaV1alpha1 retrieves the DeepseaV1alpha1Client
+func (c *Clientset) DeepseaV1alpha1() deepseav1alpha1.DeepseaV1alpha1Interface {
+	return &fakedeepseav1alpha1.FakeDeepseaV1alpha1{Fake: &c.Fake}
+}
 
 // ThingsV1alpha1 retrieves the ThingsV1alpha1Client
 func (c *Clientset) ThingsV1alpha1() thingsv1alpha1.ThingsV1alpha1Interface {

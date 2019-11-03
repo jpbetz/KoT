@@ -19,22 +19,22 @@ limitations under the License.
 package fake
 
 import (
-	v1alpha1 "github.com/jpbetz/KoT/generated/clientset/versioned/typed/things/v1alpha1"
+	v1alpha1 "github.com/jpbetz/KoT/generated/clientset/versioned/typed/deepsea/v1alpha1"
 	rest "k8s.io/client-go/rest"
 	testing "k8s.io/client-go/testing"
 )
 
-type FakeThingsV1alpha1 struct {
+type FakeDeepseaV1alpha1 struct {
 	*testing.Fake
 }
 
-func (c *FakeThingsV1alpha1) Devices(namespace string) v1alpha1.DeviceInterface {
-	return &FakeDevices{c, namespace}
+func (c *FakeDeepseaV1alpha1) Modules(namespace string) v1alpha1.ModuleInterface {
+	return &FakeModules{c, namespace}
 }
 
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
-func (c *FakeThingsV1alpha1) RESTClient() rest.Interface {
+func (c *FakeDeepseaV1alpha1) RESTClient() rest.Interface {
 	var ret *rest.RESTClient
 	return ret
 }

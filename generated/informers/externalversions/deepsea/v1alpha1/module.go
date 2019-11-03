@@ -21,10 +21,10 @@ package v1alpha1
 import (
 	time "time"
 
-	thingsv1alpha1 "github.com/jpbetz/KoT/apis/things/v1alpha1"
+	deepseav1alpha1 "github.com/jpbetz/KoT/apis/deepsea/v1alpha1"
 	versioned "github.com/jpbetz/KoT/generated/clientset/versioned"
 	internalinterfaces "github.com/jpbetz/KoT/generated/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/jpbetz/KoT/generated/listers/things/v1alpha1"
+	v1alpha1 "github.com/jpbetz/KoT/generated/listers/deepsea/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -61,16 +61,16 @@ func NewFilteredModuleInformer(client versioned.Interface, namespace string, res
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ThingsV1alpha1().Modules(namespace).List(options)
+				return client.DeepseaV1alpha1().Modules(namespace).List(options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ThingsV1alpha1().Modules(namespace).Watch(options)
+				return client.DeepseaV1alpha1().Modules(namespace).Watch(options)
 			},
 		},
-		&thingsv1alpha1.Module{},
+		&deepseav1alpha1.Module{},
 		resyncPeriod,
 		indexers,
 	)
@@ -81,7 +81,7 @@ func (f *moduleInformer) defaultInformer(client versioned.Interface, resyncPerio
 }
 
 func (f *moduleInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&thingsv1alpha1.Module{}, f.defaultInformer)
+	return f.factory.InformerFor(&deepseav1alpha1.Module{}, f.defaultInformer)
 }
 
 func (f *moduleInformer) Lister() v1alpha1.ModuleLister {

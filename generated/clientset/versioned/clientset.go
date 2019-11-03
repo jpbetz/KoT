@@ -21,6 +21,7 @@ package versioned
 import (
 	"fmt"
 
+	deepseav1alpha1 "github.com/jpbetz/KoT/generated/clientset/versioned/typed/deepsea/v1alpha1"
 	thingsv1 "github.com/jpbetz/KoT/generated/clientset/versioned/typed/things/v1"
 	thingsv1alpha1 "github.com/jpbetz/KoT/generated/clientset/versioned/typed/things/v1alpha1"
 	discovery "k8s.io/client-go/discovery"
@@ -30,6 +31,7 @@ import (
 
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
+	DeepseaV1alpha1() deepseav1alpha1.DeepseaV1alpha1Interface
 	ThingsV1alpha1() thingsv1alpha1.ThingsV1alpha1Interface
 	ThingsV1() thingsv1.ThingsV1Interface
 }
@@ -38,8 +40,14 @@ type Interface interface {
 // version included in a Clientset.
 type Clientset struct {
 	*discovery.DiscoveryClient
-	thingsV1alpha1 *thingsv1alpha1.ThingsV1alpha1Client
-	thingsV1       *thingsv1.ThingsV1Client
+	deepseaV1alpha1 *deepseav1alpha1.DeepseaV1alpha1Client
+	thingsV1alpha1  *thingsv1alpha1.ThingsV1alpha1Client
+	thingsV1        *thingsv1.ThingsV1Client
+}
+
+// DeepseaV1alpha1 retrieves the DeepseaV1alpha1Client
+func (c *Clientset) DeepseaV1alpha1() deepseav1alpha1.DeepseaV1alpha1Interface {
+	return c.deepseaV1alpha1
 }
 
 // ThingsV1alpha1 retrieves the ThingsV1alpha1Client
@@ -73,6 +81,10 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 	}
 	var cs Clientset
 	var err error
+	cs.deepseaV1alpha1, err = deepseav1alpha1.NewForConfig(&configShallowCopy)
+	if err != nil {
+		return nil, err
+	}
 	cs.thingsV1alpha1, err = thingsv1alpha1.NewForConfig(&configShallowCopy)
 	if err != nil {
 		return nil, err
@@ -93,6 +105,7 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 // panics if there is an error in the config.
 func NewForConfigOrDie(c *rest.Config) *Clientset {
 	var cs Clientset
+	cs.deepseaV1alpha1 = deepseav1alpha1.NewForConfigOrDie(c)
 	cs.thingsV1alpha1 = thingsv1alpha1.NewForConfigOrDie(c)
 	cs.thingsV1 = thingsv1.NewForConfigOrDie(c)
 
@@ -103,6 +116,7 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 // New creates a new Clientset for the given RESTClient.
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
+	cs.deepseaV1alpha1 = deepseav1alpha1.New(c)
 	cs.thingsV1alpha1 = thingsv1alpha1.New(c)
 	cs.thingsV1 = thingsv1.New(c)
 
