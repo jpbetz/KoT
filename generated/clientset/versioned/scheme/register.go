@@ -19,6 +19,7 @@ limitations under the License.
 package scheme
 
 import (
+	deepseav1alpha1 "github.com/jpbetz/KoT/apis/deepsea/v1alpha1"
 	thingsv1 "github.com/jpbetz/KoT/apis/things/v1"
 	thingsv1alpha1 "github.com/jpbetz/KoT/apis/things/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,6 +33,7 @@ var Scheme = runtime.NewScheme()
 var Codecs = serializer.NewCodecFactory(Scheme)
 var ParameterCodec = runtime.NewParameterCodec(Scheme)
 var localSchemeBuilder = runtime.SchemeBuilder{
+	deepseav1alpha1.AddToScheme,
 	thingsv1alpha1.AddToScheme,
 	thingsv1.AddToScheme,
 }

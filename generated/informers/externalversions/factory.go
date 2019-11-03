@@ -24,6 +24,7 @@ import (
 	time "time"
 
 	versioned "github.com/jpbetz/KoT/generated/clientset/versioned"
+	deepsea "github.com/jpbetz/KoT/generated/informers/externalversions/deepsea"
 	internalinterfaces "github.com/jpbetz/KoT/generated/informers/externalversions/internalinterfaces"
 	things "github.com/jpbetz/KoT/generated/informers/externalversions/things"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -172,7 +173,12 @@ type SharedInformerFactory interface {
 	ForResource(resource schema.GroupVersionResource) (GenericInformer, error)
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 
+	Deepsea() deepsea.Interface
 	Things() things.Interface
+}
+
+func (f *sharedInformerFactory) Deepsea() deepsea.Interface {
+	return deepsea.New(f, f.namespace, f.tweakListOptions)
 }
 
 func (f *sharedInformerFactory) Things() things.Interface {

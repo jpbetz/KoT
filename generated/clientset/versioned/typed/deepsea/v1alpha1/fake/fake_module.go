@@ -19,7 +19,7 @@ limitations under the License.
 package fake
 
 import (
-	v1alpha1 "github.com/jpbetz/KoT/apis/things/v1alpha1"
+	v1alpha1 "github.com/jpbetz/KoT/apis/deepsea/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -30,13 +30,13 @@ import (
 
 // FakeModules implements ModuleInterface
 type FakeModules struct {
-	Fake *FakeThingsV1alpha1
+	Fake *FakeDeepseaV1alpha1
 	ns   string
 }
 
-var modulesResource = schema.GroupVersionResource{Group: "things.kubecon.com", Version: "v1alpha1", Resource: "modules"}
+var modulesResource = schema.GroupVersionResource{Group: "deepsea.kubecon.com", Version: "v1alpha1", Resource: "modules"}
 
-var modulesKind = schema.GroupVersionKind{Group: "things.kubecon.com", Version: "v1alpha1", Kind: "Module"}
+var modulesKind = schema.GroupVersionKind{Group: "deepsea.kubecon.com", Version: "v1alpha1", Kind: "Module"}
 
 // Get takes name of the module, and returns the corresponding module object, and an error if there is any.
 func (c *FakeModules) Get(name string, options v1.GetOptions) (result *v1alpha1.Module, err error) {

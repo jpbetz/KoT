@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The Kubernetes Authors.
+Copyright 2019 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,19 +19,15 @@ package main
 import (
 	"net/http"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/gorilla/handlers"
 	"github.com/spf13/pflag"
 	"k8s.io/apiserver/pkg/server"
 	"k8s.io/apiserver/pkg/server/options"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/component-base/cli/globalflag"
 
-	"github.com/jpbetz/KoT/generated/clientset/versioned"
-	thingsinformers "github.com/jpbetz/KoT/generated/informers/externalversions"
+	"github.com/jpbetz/KoT/conversion"
 )
 
 func NewDefaultOptions() *Options {
@@ -84,35 +80,11 @@ func main() {
 		panic(err)
 	}
 
-	// create client
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		// fallback to home directory
-		home, err := os.UserHomeDir()
-		if err != nil {
-			panic(err)
-		}
-		kubeconfig := filepath.Join(home, ".kube", "config")
-		if envvar := os.Getenv("KUBECONFIG"); len(envvar) > 0 {
-			kubeconfig = envvar
-		}
-		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
-		if err != nil {
-			panic(err)
-		}
-	}
-	clientset, err := versioned.NewForConfig(config)
-	if err != nil {
-		panic(err.Error())
-	}
-
 	stopCh := server.SetupSignalHandler()
 
 	// register handlers
-	restaurantInformers := thingsinformers.NewSharedInformerFactory(clientset, time.Minute*5)
 	mux := http.NewServeMux()
-	mux.Handle("/convert/v1beta1/things", http.HandlerFunc(Serve))
-	restaurantInformers.Start(stopCh)
+	mux.Handle("/convert/v1/devices", http.HandlerFunc(conversion.Serve))
 
 	// run server
 	if doneCh, err := cfg.SecureServing.Serve(handlers.LoggingHandler(os.Stdout, mux), time.Second*30, stopCh); err != nil {

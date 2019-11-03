@@ -14,13 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package conversion
 
 import (
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/klog"
 
 	v1 "github.com/jpbetz/KoT/apis/things/v1"
@@ -39,9 +40,9 @@ func convertValueToV1alpha(in *v1.Value) *v1alpha1.Value {
 	case in.Boolean != nil:
 		ret.Type = v1alpha1.BooleanType
 		if *in.Boolean {
-			ret.Value = *resource.NewQuantity(0, resource.DecimalSI)
-		} else {
 			ret.Value = *resource.NewQuantity(1, resource.DecimalSI)
+		} else {
+			ret.Value = *resource.NewQuantity(0, resource.DecimalSI)
 		}
 	case in.Float != nil:
 		ret.Type = v1alpha1.FloatType
@@ -66,13 +67,15 @@ func convertValueToV1(in *v1alpha1.Value) *v1.Value {
 	case v1alpha1.BooleanType:
 		b := !in.Value.IsZero()
 		ret.Boolean = &b
-	case v1alpha1.FloatType:
-		ret.Float = &in.Value
 	case v1alpha1.IntegerType:
 		i64, _ := in.Value.AsInt64()
 		i32 := int32(i64)
 		ret.Integer = &i32
+	case v1alpha1.FloatType:
+		clone := in.Value.DeepCopy()
+		ret.Float = &clone
 	}
+
 	return ret
 }
 
@@ -109,6 +112,11 @@ func convert(in runtime.Object, apiVersion string) (runtime.Object, error) {
 		}
 		out.TypeMeta.APIVersion = apiVersion
 
+		if klog.V(6) {
+			klog.Infof("In: %s\nOut: %s", marshal(in), marshal(out))
+
+		}
+
 		return out, nil
 
 	case *v1.Device:
@@ -128,10 +136,19 @@ func convert(in runtime.Object, apiVersion string) (runtime.Object, error) {
 		}
 		out.TypeMeta.APIVersion = apiVersion
 
+		if klog.V(6) {
+			klog.Infof("In: %s\nOut: %s", marshal(in), marshal(out))
+		}
+
 		return out, nil
 
 	default:
 	}
 	klog.V(2).Infof("Unknown type %T", in)
 	return nil, fmt.Errorf("unknown type %T", in)
+}
+
+func marshal(x interface{}) string {
+	ret, _ := json.Marshal(x)
+	return string(ret)
 }

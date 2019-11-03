@@ -21,7 +21,7 @@ package v1alpha1
 import (
 	"time"
 
-	v1alpha1 "github.com/jpbetz/KoT/apis/things/v1alpha1"
+	v1alpha1 "github.com/jpbetz/KoT/apis/deepsea/v1alpha1"
 	scheme "github.com/jpbetz/KoT/generated/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -56,7 +56,7 @@ type modules struct {
 }
 
 // newModules returns a Modules
-func newModules(c *ThingsV1alpha1Client, namespace string) *modules {
+func newModules(c *DeepseaV1alpha1Client, namespace string) *modules {
 	return &modules{
 		client: c.RESTClient(),
 		ns:     namespace,
