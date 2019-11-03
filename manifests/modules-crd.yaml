@@ -4,6 +4,7 @@ metadata:
   name: modules.deepsea.kubecon.com
 spec:
   group: deepsea.kubecon.com
+  preserveUnknownFields: false
   versions:
   - name: v1alpha1
     served: true
