@@ -43,6 +43,7 @@ func main() {
 	go s.websockets.run()
 	router := mux.NewRouter()
 	router.HandleFunc("/api/modules", s.modulesHandler)
+	router.HandleFunc("/api/modules/{moduleID}", s.moduleHandler)
 	router.HandleFunc("/api/devices/{deviceID}/inputs/{inputID}", s.inputHandler)
 	router.HandleFunc("/api/devices/{deviceID}/outputs/{outputID}", s.outputHandler)
 	router.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
@@ -91,6 +92,37 @@ func (s *server) modulesHandler(w http.ResponseWriter, r *http.Request) {
 			log.Printf("error: %v", err)
 		}
 		return
+	default:
+		http.Error(w, "", http.StatusMethodNotAllowed)
+		return
+	}
+}
+
+func (s *server) moduleHandler(w http.ResponseWriter, r *http.Request) {
+	//log.Println(r.Method, r.URL.Path, r.RemoteAddr, r.UserAgent())
+	vars := mux.Vars(r)
+	moduleID := vars["moduleID"]
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	module := s.modules.GetModule(moduleID)
+	switch r.Method {
+	case "GET":
+		if module == nil {
+			http.NotFound(w, r)
+			return
+		}
+		js, err := json.Marshal(module)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, err = w.Write(js)
+		if err != nil {
+			log.Printf("error: %v", err)
+		}
+		return
 	case "PUT":
 		decoder := json.NewDecoder(r.Body)
 		updatedModule := &types.Module{}
@@ -100,9 +132,17 @@ func (s *server) modulesHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+		if module != nil && module.ID != updatedModule.ID {
+			http.Error(w, "ID in request does not match ID in path", http.StatusBadRequest)
+		}
 		s.modules.PutModule(updatedModule)
-
 		return
+	case "DELETE":
+		if module == nil {
+			http.NotFound(w, r)
+			return
+		}
+		s.modules.DeleteModule(moduleID)
 	default:
 		http.Error(w, "", http.StatusMethodNotAllowed)
 		return

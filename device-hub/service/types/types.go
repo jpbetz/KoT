@@ -62,6 +62,15 @@ func (m *Modules) PutModule(in *Module) {
 	m.Modules = append(m.Modules, in)
 }
 
+func (m *Modules) DeleteModule(moduleID string) {
+	for i, module := range m.Modules {
+		if module.ID == moduleID {
+			m.Modules = append(m.Modules[:i], m.Modules[i+1:]...)
+			return
+		}
+	}
+}
+
 func (m *Module) GetDevices() []*Device {
 	return []*Device{m.WaterAlarm, m.PressureSensor, m.Pump}
 }

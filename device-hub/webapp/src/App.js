@@ -61,7 +61,7 @@ class App extends React.Component {
 
 	render() {
 		const { classes } = this.props;
-		let pressureMarks = [{value: 1, label: "1 bar"}, {value: 10, label: "10 bar"}, {value: 15, label: "15 bar"}];
+		let pressureMarks = [{value: 1, label: "1"}, {value: 10, label: "10"}, {value: 15, label: "15"}];
 		let pumpMarks = [{value: 0, label: "0"}, {value: 5, label: "5"}];
 
 		if (!this.state.modules) {
@@ -97,11 +97,11 @@ class App extends React.Component {
 												</div>
 												<ul>
 													<Typography component="li" variant="subtitle1" align="center" key={"pump"}>
-														Pumps Running: <Value path={module.id + "." + module.pump.id + ".activeCount"}/>
+														<Value path={module.id + "." + module.pump.id + ".activeCount"}/> Pumps Running
 													</Typography>
 
 													<Typography component="li" variant="subtitle1" align="center" key={"alarm"}>
-														Alarm: <Light path={module.id + "." + module.waterAlarm.id + ".alarm"}/>
+														<Light path={module.id + "." + module.waterAlarm.id + ".alarm"}/>
 													</Typography>
 												</ul>
 											</CardContent>
@@ -114,13 +114,17 @@ class App extends React.Component {
 												<div className={classes.cardContent}>
 													<ul>
 														<p>
-															Pressure Override
+															Pressure
 															<Slider min={1} max={15} marks={pressureMarks}
 																			path={module.id + "." + module.pressureSensor.id + ".pressure"}/>
 														</p>
 														<p>
-															Pump Override
+															Pumps
 															<Slider min={0} max={5} marks={pumpMarks} input path={module.id + "." + module.pump.id + ".activeCount"}/>
+														</p>
+														<p>
+															Alarm
+															<Switch path={module.id + "." + module.waterAlarm.id + ".alarm"}/>
 														</p>
 													</ul>
 												</div>
