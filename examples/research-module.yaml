@@ -1,0 +1,11 @@
+apiVersion: deepsea.kubecon.com/v1alpha1
+kind: Module
+metadata:
+  name: research
+  namespace: examples
+spec:
+  devices:
+    pump: research-pump
+    waterAlarm: research-water
+    pressureSensor: research-pressure
+status: {}

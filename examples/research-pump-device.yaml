@@ -1,0 +1,11 @@
+apiVersion: things.kubecon.com/v1alpha1
+kind: Device
+metadata:
+  name: research-pump
+  namespace: examples
+spec:
+  inputs:
+  - name: Level
+    type: Integer
+    value: "3"
+status: {}
