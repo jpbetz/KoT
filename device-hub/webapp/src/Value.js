@@ -20,11 +20,13 @@ class ValueViewer extends React.Component {
   }
 
   render() {
+    let v = Number.parseFloat(this.state.sensor.value);
     return (
       <span>
-        {this.state.sensor.value.toFixed(this.props.fractionDigits)}
+        {v.toFixed(this.props.fractionDigits)}
       </span>
     );
   }
 }
+
 export default ValueViewer;

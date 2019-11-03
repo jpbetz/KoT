@@ -21,7 +21,8 @@ class Light extends React.Component {
     }
 
     render() {
-      var color = this.state.sensor.value > 0 ? 'error' : 'disabled';
+      let v = Number.parseFloat(this.state.sensor.value);
+      let color = v > 0 ? 'error' : 'disabled';
       return (
         <WbIncandescentIcon color={color} fontSize={'large'} />
       );

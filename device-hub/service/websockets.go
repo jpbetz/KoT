@@ -34,7 +34,7 @@ func websocketHandler(s *server, w http.ResponseWriter, r *http.Request) {
 			for _, device := range module.GetDevices() {
 				for _, input := range device.Inputs {
 					m := &types.ValueChangedMessage{
-						Path: module.ID + "." + device.ID + "." + input.ID,
+						Path: module.ID + "." + device.ID + "." + input.Name,
 						Value: input.Value,
 					}
 					data, err := json.Marshal(m)
@@ -46,7 +46,7 @@ func websocketHandler(s *server, w http.ResponseWriter, r *http.Request) {
 				}
 				for _, output := range device.Outputs {
 					m := &types.ValueChangedMessage{
-						Path:  module.ID + "." + device.ID + "." + output.ID,
+						Path:  module.ID + "." + device.ID + "." + output.Name,
 						Value: output.Value,
 					}
 					data, err := json.Marshal(m)

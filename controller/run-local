@@ -1,1 +1,0 @@
-./controller -kubeconfig=/var/run/kubernetes/admin.kubeconfig -devicehub=http://localhost:8081

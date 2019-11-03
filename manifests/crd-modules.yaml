@@ -10,7 +10,7 @@ spec:
     storage: true
   names:
     kind: Module
-    plural: Modules
+    plural: modules
     listKind: ModuleList
   validation:
     openAPIV3Schema:

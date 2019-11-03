@@ -1,7 +1,7 @@
 import ReconnectingWebSocket from 'reconnecting-websocket';
 
-const rws = new ReconnectingWebSocket('ws://' + window.location.host + '/ws');
-//const rws = new ReconnectingWebSocket('ws://localhost:8080/ws');
+//const rws = new ReconnectingWebSocket('ws://' + window.location.host + '/ws');
+const rws = new ReconnectingWebSocket('ws://localhost:8085/ws');
 
 const onUpdateHandlers = {};
 
@@ -25,17 +25,8 @@ export function removeOnUpdatedListener(path, handler) {
     }
 }
 
-rws.addEventListener('open', () => {
-    console.log("ws open");
-});
-
-rws.addEventListener('close', () => {
-    console.log("ws close");
-});
-
 rws.addEventListener('message', event => {
-    console.log("ws event:");
-    console.log(event);
+    //console.log(event);
 		let lines = event.data.split("\n");
     for(let i = 0; i < lines.length; i++) {
 			let line = lines[i];
@@ -45,12 +36,11 @@ rws.addEventListener('message', event => {
 	    for(let j = 0; j < handlers.length; j++) {
 				handlers[j](msg.value);
 	    }
+		}
 	}
-    }
 });
 
 rws.addEventListener('error', err => {
-    console.log("ws error");
     console.log(err);
 });
 

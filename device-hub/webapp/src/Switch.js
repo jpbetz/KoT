@@ -22,14 +22,15 @@ class SensorSwitch extends React.Component {
     }
 
     onSwitchChanged(event) {
-      var value = event.target.checked ? 1 : 0;
-      this.setState({sensor: {value: value}}) // pre-emptively update UI
-      api.setOutput(this.path, value)
+      let value = event.target.checked ? 1 : 0;
+      this.setState({sensor: {value: value}}); // pre-emptively update UI
+      api.setOutput(this.path, value.toString())
     }
 
     render() {
+      let v = Number.parseFloat(this.state.sensor.value);
       return (
-        <Switch onChange={(event, value) => this.onSwitchChanged(event, value)} checked={this.state.sensor.value ? true : false} />
+        <Switch onChange={(event, value) => this.onSwitchChanged(event, value)} checked={!!v} />
       );
     }
 

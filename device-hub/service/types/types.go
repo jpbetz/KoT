@@ -1,5 +1,11 @@
 package types
 
+import (
+	"k8s.io/apimachinery/pkg/api/resource"
+
+	"github.com/jpbetz/KoT/apis/things/v1alpha1"
+)
+
 type Modules struct {
 	Modules []*Module `json:"modules"`
 }
@@ -13,23 +19,13 @@ type Module struct {
 
 type Device struct {
 	ID string `json:"id"`
-	Inputs []*Input `json:"inputs"`
-	Outputs []*Output `json:"outputs"`
-}
-
-type Input struct {
-	ID string `json:"id"`
-	Value float64 `json:"value"`
-}
-
-type Output struct {
-	ID string `json:"id"`
-	Value float64 `json:"value"`
+	Inputs []v1alpha1.Value `json:"inputs"`
+	Outputs []v1alpha1.Value `json:"outputs"`
 }
 
 type ValueChangedMessage struct {
 	Path string `json:"path"`
-	Value float64 `json:"value"`
+	Value resource.Quantity `json:"value"`
 }
 
 func (m *Modules) GetDevice(id string) (*Module, *Device) {
@@ -75,20 +71,40 @@ func (m *Module) GetDevices() []*Device {
 	return []*Device{m.WaterAlarm, m.PressureSensor, m.Pump}
 }
 
-func (d *Device) GetInput(id string) *Input {
+func (d *Device) GetInput(name string) (v1alpha1.Value, bool) {
 	for _, input := range d.Inputs {
-		if input.ID == id {
-			return input
+		if input.Name == name {
+			return input, true
 		}
 	}
-	return nil
+	return v1alpha1.Value{}, false
 }
 
-func (d *Device) GetOutput(id string) *Output {
-	for _, output := range d.Outputs {
-		if output.ID == id {
-			return output
+func (d *Device) SetInput(name string, q resource.Quantity) bool {
+	for i, input := range d.Inputs {
+		if input.Name == name {
+			d.Inputs[i] = v1alpha1.Value{Name: name, Type: input.Type, Value: q}
+			return true
 		}
 	}
-	return nil
+	return false
+}
+
+func (d *Device) GetOutput(name string) (v1alpha1.Value, bool) {
+	for _, output := range d.Outputs {
+		if output.Name == name {
+			return output, true
+		}
+	}
+	return v1alpha1.Value{}, false
+}
+
+func (d *Device) SetOutput(name string, q resource.Quantity) bool {
+	for i, output := range d.Outputs {
+		if output.Name == name {
+			d.Outputs[i] = v1alpha1.Value{Name: name, Type: output.Type, Value: q}
+			return true
+		}
+	}
+	return false
 }

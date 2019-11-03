@@ -1,0 +1,9 @@
+apiVersion: things.kubecon.com/v1alpha1
+kind: Device
+metadata:
+  name: alarm1
+spec:
+  inputs:
+    - name: alarm
+      type: boolean
+      value: "0.0"

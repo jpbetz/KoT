@@ -6,7 +6,7 @@ class SensorSlider extends React.Component {
   constructor(props) {
     super(props);
     this.state = {sensor: {value: 0}};
-    this.path = this.props.path
+    this.path = this.props.path;
   }
 
   componentDidMount() {
@@ -22,18 +22,20 @@ class SensorSlider extends React.Component {
   }
 
   onSliderChanged(event, value) {
-    this.setState({sensor: {value: value}}) // pre-emptively update UI
+    let num = value.toString();
+    this.setState({sensor: {value: value}}); // pre-emptively update UI
     if(this.props.input) {
-      api.setInput(this.path, value)
+      api.setInput(this.path, num)
     } else {
-      api.setOutput(this.path, value)
+      api.setOutput(this.path, num)
     }
   }
 
   render() {
-    var {deviceID, ID, inpput, ...other} = this.props;
+    let {deviceID, ID, input, ...other} = this.props;
+    let v = Number.parseFloat(this.state.sensor.value);
     return (
-      <Slider {...other} onChange={(event, value) => this.onSliderChanged(event, value)} value={this.state.sensor.value} />
+      <Slider {...other} onChange={(event, value) => this.onSliderChanged(event, value)} value={v} />
     );
   }
 }

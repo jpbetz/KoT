@@ -2,17 +2,31 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"log"
 	"net/http"
 	"sync"
 	"time"
 
 	"github.com/gorilla/mux"
+	"k8s.io/apimachinery/pkg/api/resource"
 
+	"github.com/jpbetz/KoT/apis/things/v1alpha1"
 	"github.com/jpbetz/KoT/device-hub/service/types"
 )
 
 func main() {
+	var addr string
+	flag.StringVar(&addr, "addr", ":8085", "The address to bind to.")
+	flag.Parse()
+
+	quantity := func(s string) resource.Quantity {
+		q, err := resource.ParseQuantity(s)
+		if err != nil {
+			log.Fatalf("failed to parse quantity: %s", s)
+		}
+		return q
+	}
 	s := &server{}
 	s.modules = &types.Modules{
 		Modules: []*types.Module{
@@ -20,20 +34,20 @@ func main() {
 				ID: "command",
 				PressureSensor: &types.Device{
 					ID: "pressureSensor1",
-					Outputs: []*types.Output{
-						{ID: "pressure", Value: 10.0},
+					Outputs: []v1alpha1.Value{
+						{Name: "pressure", Type: "float", Value: quantity("10.0")},
 					},
 				},
 				WaterAlarm: &types.Device{
 					ID: "alarm1",
-					Outputs: []*types.Output{
-						{ID: "alarm", Value: 0.0},
+					Outputs: []v1alpha1.Value{
+						{Name: "alarm", Type: "boolean", Value: quantity("0.0")},
 					},
 				},
 				Pump: &types.Device{
 					ID: "pumps1",
-					Inputs: []*types.Input{
-						{ID: "activeCount", Value: 1.0},
+					Inputs: []v1alpha1.Value{
+						{Name: "activeCount", Type: "integer", Value: quantity("1.0")},
 					},
 				},
 			},
@@ -52,7 +66,7 @@ func main() {
 	router.PathPrefix("/").HandlerFunc(staticContentHandler)
 	server := &http.Server{
 		Handler: router,
-		Addr: ":8080",
+		Addr: addr,
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout: 15 * time.Second,
 	}
@@ -162,8 +176,8 @@ func (s *server) inputHandler(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	input := device.GetInput(inputID)
-	if input == nil {
+	input, ok := device.GetInput(inputID)
+	if !ok {
 		http.NotFound(w, r)
 		return
 	}
@@ -180,17 +194,17 @@ func (s *server) inputHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	case "PUT":
 		decoder := json.NewDecoder(r.Body)
-		var updatedInput types.Input
+		var updatedInput v1alpha1.Value
 		err := decoder.Decode(&updatedInput)
 		if err != nil {
 			log.Printf("error decoding request: %v", err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		input.Value = updatedInput.Value
+		device.SetInput(input.Name, updatedInput.Value)
 		msg := &types.ValueChangedMessage{
 			Path: module.ID + "." + deviceID + "." + inputID,
-			Value: input.Value,
+			Value: updatedInput.Value,
 		}
 		s.websockets.broadcast <-msg
 		return
@@ -213,8 +227,8 @@ func (s *server) outputHandler(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	output := device.GetOutput(outputID)
-	if output == nil {
+	output, ok := device.GetOutput(outputID)
+	if !ok {
 		http.NotFound(w, r)
 		return
 	}
@@ -231,17 +245,17 @@ func (s *server) outputHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	case "PUT":
 		decoder := json.NewDecoder(r.Body)
-		var updatedOutput types.Output
+		var updatedOutput v1alpha1.Value
 		err := decoder.Decode(&updatedOutput)
 		if err != nil {
 			log.Printf("error decoding request: %v", err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		output.Value = updatedOutput.Value
+		device.SetOutput(output.Name, updatedOutput.Value)
 		msg := &types.ValueChangedMessage{
 			Path: module.ID + "." + deviceID + "." + outputID,
-			Value: output.Value,
+			Value: updatedOutput.Value,
 		}
 		s.websockets.broadcast <-msg
 		return

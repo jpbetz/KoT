@@ -193,6 +193,6 @@ spec:
                       type: string
   names:
     kind: Device
-    plural: Devices
+    plural: devices
     listKind: DeviceList
   scope: Namespaced
