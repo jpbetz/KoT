@@ -23,8 +23,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	deepseav1alpha1 "github.com/jpbetz/KoT/apis/deepsea/v1alpha1"
 	"github.com/jpbetz/KoT/apis/things/v1alpha1"
-	"github.com/jpbetz/KoT/device-hub/service/types"
 )
 
 type Client struct {
@@ -32,68 +32,44 @@ type Client struct {
 	Client *http.Client
 }
 
-func (c *Client) GetModule(name string) (*types.Module, error) {
-	module := &types.Module{}
-	err := c.get(c.Url+ "/api/modules/%s", nil)
+func (c *Client) GetModule(name string) (*deepseav1alpha1.Module, error) {
+	module := &deepseav1alpha1.Module{}
+	found, err := c.get("/api/modules/" + name, module)
 	if err != nil {
 		return nil, err
+	}
+	if !found {
+		return nil, nil
 	}
 	return module, nil
 }
 
-// TODO: remove module
-func (c *Client) PutModule(module *v1alpha1.Module) error {
-	return c.put(fmt.Sprintf("%s/api/modules/%s", c.Url, module.Name), module)
+func (c *Client) PutModule(module *deepseav1alpha1.Module) error {
+	return c.put("/api/modules/" + module.Name, module)
 }
 
-func (c *Client) CheckDeviceStatus(deviceID string) (v1alpha1.DeviceStatus, error) {
-	req, err := http.NewRequest(http.MethodGet, c.Url+ "/api/modules", nil)
+func (c *Client) GetDevice(name string) (*v1alpha1.Device, error) {
+	device := &v1alpha1.Device{}
+	found, err := c.get("/api/devices/" + name, device)
 	if err != nil {
-		return v1alpha1.DeviceStatus{}, err
+		return nil, err
 	}
-	response, err := c.Client.Do(req)
-	if err != nil {
-		return v1alpha1.DeviceStatus{}, err
+	if !found {
+		return nil, nil
 	}
-	if response.StatusCode < 200 || response.StatusCode >= 300 {
-		return v1alpha1.DeviceStatus{}, fmt.Errorf("non-200 response code: %d", response.StatusCode)
-	}
-	body, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return v1alpha1.DeviceStatus{}, err
-	}
-	modules := &types.Modules{}
-	err = json.Unmarshal(body, modules)
-	if err != nil {
-		return v1alpha1.DeviceStatus{}, err
-	}
-	for _, module := range modules.Modules {
-		for _, device := range []*types.Device{module.PressureSensor, module.WaterAlarm, module.Pump} {
-			if device.ID == deviceID {
-				return ToDeviceStatus(device), nil
-			}
-		}
-	}
-	return v1alpha1.DeviceStatus{}, fmt.Errorf("device not found, ID: %s (%#+v)", deviceID, modules)
+	return device, nil
 }
 
-func ToDeviceStatus(device *types.Device) v1alpha1.DeviceStatus {
-	status := v1alpha1.DeviceStatus{}
-	status.ObservedInputs = device.Inputs
-	status.Outputs = device.Outputs
-	return status
+func (c *Client) PutDevice(device *v1alpha1.Device) error {
+	return c.put("/api/devices/" + device.Name, device)
 }
 
-func (c *Client) SetDeviceInput(deviceID string, inputID string, value v1alpha1.Value) error {
-	return c.put(fmt.Sprintf("%s/api/devices/%s/inputs/%s", c.Url, deviceID, inputID), value)
-}
-
-func (c *Client) put(url string, content interface{}) error {
+func (c *Client) put(path string, content interface{}) error {
 	data, err := json.Marshal(content)
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(data))
+	req, err := http.NewRequest(http.MethodPut, c.Url + path, bytes.NewBuffer(data))
 	if err != nil {
 		return err
 	}
@@ -101,31 +77,35 @@ func (c *Client) put(url string, content interface{}) error {
 	if err != nil {
 		return err
 	}
+
 	if response.StatusCode < 200 && response.StatusCode >= 300 {
 		return fmt.Errorf("non-200 response code: %d", response.StatusCode)
 	}
 	return nil
 }
 
-func (c *Client) get(url string, out interface{}) error {
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+func (c *Client) get(path string, out interface{}) (bool, error) {
+	req, err := http.NewRequest(http.MethodGet, c.Url + path, nil)
 	if err != nil {
-		return err
+		return false, err
 	}
 	response, err := c.Client.Do(req)
 	if err != nil {
-		return err
-	}
-	if response.StatusCode < 200 || response.StatusCode >= 300 {
-		return fmt.Errorf("non-200 response code: %d", response.StatusCode)
+		return false, err
 	}
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return err
+		return false, err
+	}
+	if response.StatusCode == 404 {
+		return false, nil
+	}
+	if response.StatusCode < 200 || response.StatusCode >= 300 {
+		return false, fmt.Errorf("non-200 response code: %d", response.StatusCode)
 	}
 	err = json.Unmarshal(body, out)
 	if err != nil {
-		return err
+		return false, err
 	}
-	return nil
+	return true, nil
 }

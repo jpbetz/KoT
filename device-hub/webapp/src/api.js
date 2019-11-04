@@ -44,10 +44,10 @@ rws.addEventListener('error', err => {
     console.log(err);
 });
 
-export function getModules(onLoaded) {
-	fetch("/api/modules")
+export function getDataset(onLoaded) {
+	fetch("/api/")
 			.then(response => response.json())
-			.then(data => onLoaded(data.modules))
+			.then(data => onLoaded(data))
 }
 
 export function setOutput(path, value) {

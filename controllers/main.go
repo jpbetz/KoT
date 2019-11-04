@@ -5,15 +5,16 @@ import (
 	"net/http"
 	"os"
 
+	deepseav1alpha1 "github.com/jpbetz/KoT/apis/deepsea/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/klog/klogr"
 	ctrl "sigs.k8s.io/controller-runtime"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-
 	// +kubebuilder:scaffold:imports
 
 	"github.com/jpbetz/KoT/apis/things/v1alpha1"
+
 	"github.com/jpbetz/KoT/controllers/devicecontroller"
 	"github.com/jpbetz/KoT/controllers/modulecontroller"
 	"github.com/jpbetz/KoT/device-hub/service/client"
@@ -27,6 +28,7 @@ var (
 func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = v1alpha1.AddToScheme(scheme)
+	_ = deepseav1alpha1.AddToScheme(scheme)
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -62,17 +64,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&modulecontroller.ModuleReconciler{
+	moduleReconciler := &modulecontroller.ModuleReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Captain"),
 		SimulatorClient: simulatorClient,
 		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
+	}
+	if err = moduleReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Captain")
 		os.Exit(1)
 	}
-
-
+	if err = mgr.Add(moduleReconciler.SyncStatus()); err != nil {
+		setupLog.Error(err, "unable to add sync status runnable", "controller", "Captain")
+		os.Exit(1)
+	}
 
 	// +kubebuilder:scaffold:builder
 

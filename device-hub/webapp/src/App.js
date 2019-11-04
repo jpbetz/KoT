@@ -52,11 +52,11 @@ class App extends React.Component {
 	}
 
 	componentDidMount() {
-		api.getModules(this.onLoaded.bind(this))
+		api.getDataset(this.onLoaded.bind(this))
 	}
 
 	onLoaded(data) {
-		this.setState({modules: data});
+		this.setState({modules: data.modules, devices: data.devices});
 	}
 
 	render() {
@@ -69,7 +69,7 @@ class App extends React.Component {
 					<div>Loading</div>
 			);
 		}
-
+	console.log(Object.values(this.state.modules));
 		return (
 				<div>
 					<Typography component="h1" variant="h2" align="center" color="textPrimary" gutterBottom>
@@ -77,11 +77,11 @@ class App extends React.Component {
 					</Typography>
 					<Container maxWidth="md" component="main">
 						<Grid container alignItems="flex-end" spacing={5}>
-							{this.state.modules.map(module => (
-									<Grid item key={module.id} xs={12} sm={6} md={4}>
+							{Object.values(this.state.modules).map(module => (
+									<Grid item key={module.metadata.name} xs={12} sm={6} md={4}>
 										<Card>
 											<CardHeader
-													title={titleCase(module.id + " Module")}
+													title={titleCase(module.metadata.name + " Module")}
 													titleTypographyProps={{align: 'center'}}
 													className={classes.cardHeader}
 											/>
@@ -89,7 +89,7 @@ class App extends React.Component {
 												<div className={classes.cardContent}>
 
 													<Typography component="h2" variant="h3" color="textPrimary">
-														<Value fractionDigits={2} path={module.id + "." + module.pressureSensor.id + ".pressure"}/>
+														<Value fractionDigits={2} path={module.metadata.name + "." + this.state.devices[module.spec.devices.pressureSensor].metadata.name + ".pressure"}/>
 													</Typography>
 													<Typography variant="h6" color="textSecondary">
 														bar
@@ -97,11 +97,11 @@ class App extends React.Component {
 												</div>
 												<ul>
 													<Typography component="li" variant="subtitle1" align="center" key={"pump"}>
-														<Value path={module.id + "." + module.pump.id + ".activeCount"}/> Pumps Running
+														<Value path={module.metadata.name + "." + this.state.devices[module.spec.devices.pump].metadata.name + ".activeCount"}/> Pumps Running
 													</Typography>
 
 													<Typography component="li" variant="subtitle1" align="center" key={"alarm"}>
-														<Light path={module.id + "." + module.waterAlarm.id + ".alarm"}/>
+														<Light path={module.metadata.name + "." + this.state.devices[module.spec.devices.waterAlarm].metadata.name + ".alarm"}/>
 													</Typography>
 												</ul>
 											</CardContent>
@@ -116,15 +116,15 @@ class App extends React.Component {
 														<p>
 															Pressure
 															<Slider min={1} max={15} marks={pressureMarks}
-																			path={module.id + "." + module.pressureSensor.id + ".pressure"}/>
+																			path={module.metadata.name + "." + this.state.devices[module.spec.devices.pressureSensor].metadata.name + ".pressure"}/>
 														</p>
 														<p>
 															Pumps
-															<Slider min={0} max={5} marks={pumpMarks} input path={module.id + "." + module.pump.id + ".activeCount"}/>
+															<Slider min={0} max={5} marks={pumpMarks} input path={module.metadata.name + "." + this.state.devices[module.spec.devices.pump].metadata.name + ".activeCount"}/>
 														</p>
 														<p>
 															Alarm
-															<Switch path={module.id + "." + module.waterAlarm.id + ".alarm"}/>
+															<Switch path={module.metadata.name + "." + this.state.devices[module.spec.devices.waterAlarm].metadata.name + ".alarm"}/>
 														</p>
 													</ul>
 												</div>

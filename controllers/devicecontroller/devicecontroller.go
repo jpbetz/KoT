@@ -16,6 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/jpbetz/KoT/apis/things/v1alpha1"
+
 	simulatorclient "github.com/jpbetz/KoT/device-hub/service/client"
 )
 
@@ -42,8 +43,11 @@ func (r *DeviceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, ignoreNotFound(err)
 	}
 
-	// TODO: update the device if the spec has changed
-
+	// TODO: Add reconciliation logic here
+	// err := r.SimulatorClient.PutDevice(&device)
+	// if err != nil {
+	// 	utilruntime.HandleError(fmt.Errorf("failed to update simulator device for %s: %v", device.Name, err))
+	// }
 
 	return ctrl.Result{}, nil
 }
@@ -67,13 +71,22 @@ func (s *syncRunnable) Start(stopCh <-chan struct{}) error {
 				return
 			default:
 			}
-			status, err := s.r.SimulatorClient.CheckDeviceStatus(d.Name)
+			device, err := s.r.SimulatorClient.GetDevice(d.Name)
 			if err != nil {
-				utilruntime.HandleError(fmt.Errorf("failed get device status for %s: %v", d.Name, err))
+				utilruntime.HandleError(fmt.Errorf("failed to get device for %s: %v", d.Name, err))
 				continue
 			}
-			if !equality.Semantic.DeepEqual(d.Status, status) {
-				d.Status = status
+			if device == nil {
+				s.r.Log.Info("Device not found in simulator, registering it", "device", d.Name)
+				err = s.r.SimulatorClient.PutDevice(&d)
+				if err != nil {
+					utilruntime.HandleError(fmt.Errorf("failed reconcile device for %s: %v", d.Name, err))
+				}
+				continue
+			}
+			if !equality.Semantic.DeepEqual(d.Status, device.Status) {
+				s.r.Log.Info("Device status has changed, updating it", "device", d.Name)
+				d.Status = device.Status
 				err = s.r.Update(ctx, &d)
 				if err != nil {
 					utilruntime.HandleError(fmt.Errorf("failed update device status for %s: %v", d.Name, err))

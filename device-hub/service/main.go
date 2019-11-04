@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"sync"
@@ -10,7 +11,9 @@ import (
 
 	"github.com/gorilla/mux"
 	"k8s.io/apimachinery/pkg/api/resource"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	deepseav1alpha1 "github.com/jpbetz/KoT/apis/deepsea/v1alpha1"
 	"github.com/jpbetz/KoT/apis/things/v1alpha1"
 	"github.com/jpbetz/KoT/device-hub/service/types"
 )
@@ -20,44 +23,62 @@ func main() {
 	flag.StringVar(&addr, "addr", ":8085", "The address to bind to.")
 	flag.Parse()
 
-	quantity := func(s string) resource.Quantity {
-		q, err := resource.ParseQuantity(s)
-		if err != nil {
-			log.Fatalf("failed to parse quantity: %s", s)
-		}
-		return q
-	}
 	s := &server{}
-	s.modules = &types.Modules{
-		Modules: []*types.Module{
-			{
-				ID: "command",
-				PressureSensor: &types.Device{
-					ID: "pressureSensor1",
-					Outputs: []v1alpha1.Value{
-						{Name: "pressure", Type: "float", Value: quantity("10.0")},
-					},
-				},
-				WaterAlarm: &types.Device{
-					ID: "alarm1",
-					Outputs: []v1alpha1.Value{
-						{Name: "alarm", Type: "boolean", Value: quantity("0.0")},
-					},
-				},
-				Pump: &types.Device{
-					ID: "pumps1",
-					Inputs: []v1alpha1.Value{
-						{Name: "activeCount", Type: "integer", Value: quantity("1.0")},
-					},
+	s.modules =  map[string]*deepseav1alpha1.Module{
+		"command": {
+			ObjectMeta: v1.ObjectMeta{Name: "command"},
+			Spec: deepseav1alpha1.ModuleSpec{
+				Devices: deepseav1alpha1.ModuleDevices{
+					PressureSensor: "pressureSensor1",
+					WaterAlarm:     "alarm1",
+					Pump:           "pumps1",
 				},
 			},
 		},
 	}
+	s.devices = map[string]*v1alpha1.Device{
+		"pressureSensor1": {
+			ObjectMeta: v1.ObjectMeta{Name: "pressureSensor1"},
+			Spec: v1alpha1.DeviceSpec{},
+			Status: v1alpha1.DeviceStatus{
+				Outputs: []v1alpha1.Value{
+					{Name: "pressure", Type: v1alpha1.FloatType, Value: quantity("10.0")},
+				},
+			},
+		},
+		"alarm1": {
+			ObjectMeta: v1.ObjectMeta{Name: "alarm1"},
+			Spec: v1alpha1.DeviceSpec{},
+			Status: v1alpha1.DeviceStatus{
+				Outputs: []v1alpha1.Value{
+					{Name: "alarm", Type: v1alpha1.BooleanType, Value: quantity("0.0")},
+				},
+			},
+		},
+		"pumps1": {
+			ObjectMeta: v1.ObjectMeta{Name: "pumps1"},
+			Spec: v1alpha1.DeviceSpec{},
+			Status: v1alpha1.DeviceStatus{
+				ObservedInputs: []v1alpha1.Value{
+					{Name: "activeCount", Type: v1alpha1.IntegerType, Value: quantity("1.0")},
+				},
+			},
+		},
+	}
+	s.deviceModules = map[string]string{
+		"pressureSensor1": "command",
+		"alarm1": "command",
+		"pumps1": "command",
+	}
+
 	s.websockets = newWebsocketManager()
 	go s.websockets.run()
 	router := mux.NewRouter()
+	router.HandleFunc("/api/", s.everythingHandler)
 	router.HandleFunc("/api/modules", s.modulesHandler)
 	router.HandleFunc("/api/modules/{moduleID}", s.moduleHandler)
+	router.HandleFunc("/api/devices", s.devicesHandler)
+	router.HandleFunc("/api/devices/{deviceID}", s.deviceHandler)
 	router.HandleFunc("/api/devices/{deviceID}/inputs/{inputID}", s.inputHandler)
 	router.HandleFunc("/api/devices/{deviceID}/outputs/{outputID}", s.outputHandler)
 	router.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
@@ -76,7 +97,9 @@ func main() {
 
 type server struct {
 	mu         sync.Mutex
-	modules    *types.Modules
+	modules    map[string]*deepseav1alpha1.Module
+	devices    map[string]*v1alpha1.Device
+	deviceModules map[string]string
 	websockets *WebsocketManager
 }
 
@@ -88,6 +111,21 @@ const (
 	pressureDropPerSec = 0.05
 )
 
+func (s *server) everythingHandler(w http.ResponseWriter, r *http.Request) {
+	//log.Println(r.Method, r.URL.Path, r.RemoteAddr, r.UserAgent())
+	switch r.Method {
+	case "GET":
+		s.mu.Lock()
+		defer s.mu.Unlock()
+
+		getResp(w, r, map[string]interface{}{"modules": s.modules, "devices": s.devices}, true)
+		return
+	default:
+		http.Error(w, "", http.StatusMethodNotAllowed)
+		return
+	}
+}
+
 func (s *server) modulesHandler(w http.ResponseWriter, r *http.Request) {
 	//log.Println(r.Method, r.URL.Path, r.RemoteAddr, r.UserAgent())
 	switch r.Method {
@@ -95,16 +133,7 @@ func (s *server) modulesHandler(w http.ResponseWriter, r *http.Request) {
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
-		js, err := json.Marshal(s.modules)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		_, err = w.Write(js)
-		if err != nil {
-			log.Printf("error: %v", err)
-		}
+		getResp(w, r, s.modules, true)
 		return
 	default:
 		http.Error(w, "", http.StatusMethodNotAllowed)
@@ -119,44 +148,117 @@ func (s *server) moduleHandler(w http.ResponseWriter, r *http.Request) {
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	module := s.modules.GetModule(moduleID)
+	module, exists := s.modules[moduleID]
 	switch r.Method {
 	case "GET":
-		if module == nil {
-			http.NotFound(w, r)
-			return
-		}
-		js, err := json.Marshal(module)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		_, err = w.Write(js)
-		if err != nil {
-			log.Printf("error: %v", err)
-		}
+		getResp(w, r, module, exists)
 		return
 	case "PUT":
-		decoder := json.NewDecoder(r.Body)
-		updatedModule := &types.Module{}
-		err := decoder.Decode(updatedModule)
-		if err != nil {
-			log.Printf("error decoding request: %v", err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		if module != nil && module.ID != updatedModule.ID {
-			http.Error(w, "ID in request does not match ID in path", http.StatusBadRequest)
-		}
-		s.modules.PutModule(updatedModule)
+		updatedModule := &deepseav1alpha1.Module{}
+		applyPut(w, r, updatedModule, func() error {
+			if exists && module.Name != updatedModule.Name {
+				http.Error(w, "Name in request does not match Name in path", http.StatusBadRequest)
+			}
+			s.modules[moduleID] = updatedModule
+
+			if exists {
+				oldDevices := module.Spec.Devices
+				for _, d := range []string{oldDevices.Pump, oldDevices.WaterAlarm, oldDevices.PressureSensor} {
+					delete(s.deviceModules, d)
+				}
+			}
+			newDevices := updatedModule.Spec.Devices
+			for kind, deviceName := range map[string]string{"pump": newDevices.Pump, "alarm": newDevices.WaterAlarm, "pressure": newDevices.PressureSensor} {
+				existingDevice, ok := s.devices[deviceName]
+				if !ok {
+					http.Error(w, fmt.Sprintf("Module %s references non-existent device %s", moduleID, deviceName), http.StatusBadRequest)
+				}
+
+				if _, ok := s.deviceModules[deviceName]; !ok {
+					// device is being registered
+					switch kind {
+					case "pump":
+						existingDevice.Status = v1alpha1.DeviceStatus{
+							ObservedInputs: []v1alpha1.Value{
+								{Name: "activeCount", Type: v1alpha1.IntegerType, Value: quantity("1.0")},
+							},
+						}
+					case "alarm":
+						existingDevice.Status = v1alpha1.DeviceStatus{
+							Outputs: []v1alpha1.Value{
+								{Name: "alarm", Type: v1alpha1.BooleanType, Value: quantity("0.0")},
+							},
+						}
+					case "pressure":
+						existingDevice.Status = v1alpha1.DeviceStatus{
+							Outputs: []v1alpha1.Value{
+								{Name: "pressure", Type: v1alpha1.FloatType, Value: quantity("10.0")},
+							},
+						}
+					default:
+						http.Error(w, fmt.Sprintf("Unrecognized kind: %s", kind), http.StatusInternalServerError)
+					}
+
+				}
+				s.deviceModules[deviceName] = updatedModule.Name
+			}
+			// TODO: notify
+			return nil
+		})
 		return
 	case "DELETE":
-		if module == nil {
-			http.NotFound(w, r)
-			return
-		}
-		s.modules.DeleteModule(moduleID)
+		delete(s.modules, moduleID)
+		w.WriteHeader(http.StatusOK)
+	default:
+		http.Error(w, "", http.StatusMethodNotAllowed)
+		return
+	}
+}
+
+func (s *server) devicesHandler(w http.ResponseWriter, r *http.Request) {
+	//log.Println(r.Method, r.URL.Path, r.RemoteAddr, r.UserAgent())
+	switch r.Method {
+	case "GET":
+		s.mu.Lock()
+		defer s.mu.Unlock()
+
+		getResp(w, r, s.devices, true)
+		return
+	default:
+		http.Error(w, "", http.StatusMethodNotAllowed)
+		return
+	}
+}
+
+func (s *server) deviceHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	deviceID := vars["deviceID"]
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	device, exists := s.devices[deviceID]
+	switch r.Method {
+	case "GET":
+		getResp(w, r, device, exists)
+		return
+	case "PUT":
+		updatedDevice := &v1alpha1.Device{}
+		applyPut(w, r, updatedDevice, func() error {
+			if exists && device.Name != updatedDevice.Name {
+				http.Error(w, "Name in request does not match Name in path", http.StatusBadRequest)
+			}
+			if exists {
+				s.devices[deviceID].Spec = updatedDevice.Spec
+			} else {
+				s.devices[deviceID] = updatedDevice
+			}
+
+			// TODO: notify
+			return nil
+		})
+	case "DELETE":
+		delete(s.devices, deviceID)
+		w.WriteHeader(http.StatusOK)
 	default:
 		http.Error(w, "", http.StatusMethodNotAllowed)
 		return
@@ -171,42 +273,39 @@ func (s *server) inputHandler(w http.ResponseWriter, r *http.Request) {
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	module, device := s.modules.GetDevice(deviceID)
-	if device == nil {
+	device, exists := s.devices[deviceID]
+	if !exists {
 		http.NotFound(w, r)
 		return
 	}
-	input, ok := device.GetInput(inputID)
-	if !ok {
+
+	input, exists := getValue(device.Status.ObservedInputs, inputID)
+	if !exists {
 		http.NotFound(w, r)
 		return
 	}
 	
 	switch r.Method {
 	case "GET":
-		js, err := json.Marshal(input)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write(js)
+		getResp(w, r, input, true)
 		return
 	case "PUT":
-		decoder := json.NewDecoder(r.Body)
-		var updatedInput v1alpha1.Value
-		err := decoder.Decode(&updatedInput)
-		if err != nil {
-			log.Printf("error decoding request: %v", err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		device.SetInput(input.Name, updatedInput.Value)
-		msg := &types.ValueChangedMessage{
-			Path: module.ID + "." + deviceID + "." + inputID,
-			Value: updatedInput.Value,
-		}
-		s.websockets.broadcast <-msg
+		valueIn := &v1alpha1.Value{}
+		applyPut(w, r, valueIn, func() error {
+			if !setValue(device.Status.ObservedInputs, inputID, valueIn) {
+				if t, ok := typesMap[inputID]; ok {
+					device.Status.ObservedInputs = append(device.Status.ObservedInputs, v1alpha1.Value{Name: inputID, Type: t, Value: valueIn.Value})
+				}
+			}
+			if moduleName, ok := s.deviceModules[deviceID]; ok {
+				msg := &types.ValueChangedMessage{
+					Path: moduleName + "." + deviceID + "." + inputID,
+					Value: valueIn.Value,
+				}
+				s.websockets.broadcast <-msg
+			}
+			return nil
+		})
 		return
 	default:
 		http.Error(w, "", http.StatusMethodNotAllowed)
@@ -222,45 +321,104 @@ func (s *server) outputHandler(w http.ResponseWriter, r *http.Request) {
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	module, device := s.modules.GetDevice(deviceID)
-	if device == nil {
+	device, exists := s.devices[deviceID]
+	if !exists {
 		http.NotFound(w, r)
 		return
 	}
-	output, ok := device.GetOutput(outputID)
-	if !ok {
+
+	output, exists := getValue(device.Status.Outputs, outputID)
+	if !exists {
 		http.NotFound(w, r)
 		return
 	}
 
 	switch r.Method {
 	case "GET":
-		js, err := json.Marshal(output)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write(js)
+		getResp(w, r, output, true)
 		return
 	case "PUT":
-		decoder := json.NewDecoder(r.Body)
-		var updatedOutput v1alpha1.Value
-		err := decoder.Decode(&updatedOutput)
-		if err != nil {
-			log.Printf("error decoding request: %v", err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		device.SetOutput(output.Name, updatedOutput.Value)
-		msg := &types.ValueChangedMessage{
-			Path: module.ID + "." + deviceID + "." + outputID,
-			Value: updatedOutput.Value,
-		}
-		s.websockets.broadcast <-msg
+		valueIn := &v1alpha1.Value{}
+		applyPut(w, r, valueIn, func() error {
+			setValue(device.Status.Outputs, outputID, valueIn)
+			if moduleName, ok := s.deviceModules[deviceID]; ok {
+				msg := &types.ValueChangedMessage{
+					Path:  moduleName + "." + deviceID + "." + outputID,
+					Value: valueIn.Value,
+				}
+				s.websockets.broadcast <- msg
+			}
+			return nil
+		})
 		return
 	default:
 		http.Error(w, "", http.StatusMethodNotAllowed)
 		return
 	}
+}
+
+func applyPut(w http.ResponseWriter, r *http.Request, out interface{}, fn func() error) {
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(out)
+	if err != nil {
+		log.Printf("error decoding request: %v", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	err = fn()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func getResp(w http.ResponseWriter, r *http.Request, obj interface{}, exists bool) {
+	if !exists {
+		http.NotFound(w, r)
+		return
+	}
+	js, err := json.Marshal(obj)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write(js)
+	if err != nil {
+		log.Printf("error: %v", err)
+	}
+}
+
+func getValue(list []v1alpha1.Value, name string) (v1alpha1.Value, bool) {
+	for _, v := range list {
+		if v.Name == name {
+			return v, true
+		}
+	}
+	return v1alpha1.Value{}, false
+}
+
+func setValue(list []v1alpha1.Value, name string, value *v1alpha1.Value) bool {
+	for i, v := range list {
+		if v.Name == name {
+			list[i].Value = value.Value
+			return true
+		}
+	}
+	return false
+}
+
+func quantity(s string) resource.Quantity {
+	q, err := resource.ParseQuantity(s)
+	if err != nil {
+		log.Fatalf("failed to parse quantity: %s", s)
+	}
+	return q
+}
+
+var typesMap = map[string]v1alpha1.Type{
+	"alarm":       v1alpha1.BooleanType,
+	"activeCount": v1alpha1.IntegerType,
+	"pressure":    v1alpha1.FloatType,
 }

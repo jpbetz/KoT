@@ -30,11 +30,11 @@ func websocketHandler(s *server, w http.ResponseWriter, r *http.Request) {
 	func () {
 		s.mu.Lock()
 		defer s.mu.Unlock()
-		for _, module := range s.modules.Modules {
-			for _, device := range module.GetDevices() {
-				for _, input := range device.Inputs {
+		for _, device := range s.devices {
+			for _, input := range device.Status.ObservedInputs {
+				if moduleName, ok := s.deviceModules[device.Name]; ok {
 					m := &types.ValueChangedMessage{
-						Path: module.ID + "." + device.ID + "." + input.Name,
+						Path:  moduleName + "." + device.Name + "." + input.Name,
 						Value: input.Value,
 					}
 					data, err := json.Marshal(m)
@@ -44,9 +44,11 @@ func websocketHandler(s *server, w http.ResponseWriter, r *http.Request) {
 					}
 					client.send <- data
 				}
-				for _, output := range device.Outputs {
+			}
+			for _, output := range device.Status.Outputs {
+				if moduleName, ok := s.deviceModules[device.Name]; ok {
 					m := &types.ValueChangedMessage{
-						Path:  module.ID + "." + device.ID + "." + output.Name,
+						Path:  moduleName + "." + device.Name + "." + output.Name,
 						Value: output.Value,
 					}
 					data, err := json.Marshal(m)

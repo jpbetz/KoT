@@ -1,0 +1,7 @@
+apiVersion: things.kubecon.io/v1alpha1
+kind: Device
+metadata:
+  name: research-water
+  namespace: examples
+spec: {}
+status: {}

@@ -18,15 +18,21 @@ package modulecontroller
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"github.com/go-logr/logr"
-	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/wait"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	"github.com/jpbetz/KoT/apis/things/v1alpha1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+
+	deepseav1alpha1 "github.com/jpbetz/KoT/apis/deepsea/v1alpha1"
+
 	simulatorclient "github.com/jpbetz/KoT/device-hub/service/client"
 )
 
@@ -44,7 +50,7 @@ func (r *ModuleReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	log := r.Log.WithValues("module", req.NamespacedName)
 
-	var module v1alpha1.Module
+	var module deepseav1alpha1.Module
 	if err := r.Get(ctx, req.NamespacedName, &module); err != nil {
 		log.Error(err, "unable to fetch Module")
 		// we'll ignore not-found errors, since they can't be fixed by an immediate
@@ -53,23 +59,62 @@ func (r *ModuleReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, ignoreNotFound(err)
 	}
 
-	existing, err := r.SimulatorClient.GetModule(module.Name)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-	if existing == nil || !equality.Semantic.DeepEqual(existing, &module) {
-		err = r.SimulatorClient.PutModule(&module)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-	}
+	// TODO: Add reconciliation logic here
+	// err := r.SimulatorClient.PutModule(&module)
+	// if err != nil {
+	// 	utilruntime.HandleError(fmt.Errorf("failed to update simulator module for %s: %v", module.Name, err))
+	// }
 
 	return ctrl.Result{}, nil
 }
 
+type syncRunnable struct {
+	r *ModuleReconciler
+}
+
+func (s *syncRunnable) Start(stopCh <-chan struct{}) error {
+	fn := func() {
+		ctx := context.Background()
+		var list deepseav1alpha1.ModuleList
+		err := s.r.List(ctx, &list)
+		if err != nil {
+			utilruntime.HandleError(fmt.Errorf("failed list devices: %v", err))
+			return
+		}
+		for _, m := range list.Items {
+			select {
+			case <-stopCh:
+				return
+			default:
+			}
+			module, err := s.r.SimulatorClient.GetModule(m.Name)
+			if err != nil {
+				utilruntime.HandleError(fmt.Errorf("failed get module while reconciling for %s: %v", m.Name, err))
+				continue
+			}
+			if module == nil {
+				s.r.Log.Info("Module not found in simulator, registering it", "module", m.Name)
+				err = s.r.SimulatorClient.PutModule(&m)
+				if err != nil {
+					utilruntime.HandleError(fmt.Errorf("failed reconcile module for %s: %v", m.Name, err))
+				}
+				continue
+			}
+
+		}
+	}
+	wait.Until(fn, time.Second * 5, stopCh)
+	return nil
+}
+
+
+func (r *ModuleReconciler) SyncStatus() manager.Runnable {
+	return &syncRunnable{r}
+}
+
 func (r *ModuleReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.Module{}).
+		For(&deepseav1alpha1.Module{}).
 		Complete(r)
 }
 
