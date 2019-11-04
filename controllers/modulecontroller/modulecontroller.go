@@ -33,7 +33,7 @@ import (
 
 	deepseav1alpha1 "github.com/jpbetz/KoT/apis/deepsea/v1alpha1"
 
-	simulatorclient "github.com/jpbetz/KoT/device-hub/service/client"
+	simulatorclient "github.com/jpbetz/KoT/simulator/service/client"
 )
 
 // ModuleReconciler reconciles a Module object
@@ -108,7 +108,7 @@ func (s *syncRunnable) Start(stopCh <-chan struct{}) error {
 }
 
 
-func (r *ModuleReconciler) SyncStatus() manager.Runnable {
+func (r *ModuleReconciler) SyncModules() manager.Runnable {
 	return &syncRunnable{r}
 }
 

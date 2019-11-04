@@ -3,11 +3,13 @@ package devicecontroller
 import (
 	"context"
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/equality"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -17,7 +19,7 @@ import (
 
 	"github.com/jpbetz/KoT/apis/things/v1alpha1"
 
-	simulatorclient "github.com/jpbetz/KoT/device-hub/service/client"
+	simulatorclient "github.com/jpbetz/KoT/simulator/service/client"
 )
 
 // DeviceReconciler reconciles a Device object
@@ -85,7 +87,6 @@ func (s *syncRunnable) Start(stopCh <-chan struct{}) error {
 				continue
 			}
 			if !equality.Semantic.DeepEqual(d.Status, device.Status) {
-				s.r.Log.Info("Device status has changed, updating it", "device", d.Name)
 				d.Status = device.Status
 				err = s.r.Update(ctx, &d)
 				if err != nil {
@@ -100,8 +101,52 @@ func (s *syncRunnable) Start(stopCh <-chan struct{}) error {
 }
 
 
-func (r *DeviceReconciler) SyncStatus() manager.Runnable {
+func (r *DeviceReconciler) SyncDevices() manager.Runnable {
 	return &syncRunnable{r}
+}
+
+type simulationRunnable struct {
+	r *DeviceReconciler
+}
+
+func (s *simulationRunnable) Start(stopCh <-chan struct{}) error {
+	fn := func() {
+		ctx := context.Background()
+		var list v1alpha1.DeviceList
+		err := s.r.List(ctx, &list)
+		if err != nil {
+			utilruntime.HandleError(fmt.Errorf("failed to list devices: %v", err))
+			return
+		}
+		for _, d := range list.Items {
+			select {
+			case <-stopCh:
+				return
+			default:
+			}
+			for _, i := range d.Status.Outputs {
+				if i.Name == "pressure" {
+					freq := 1e-10 // ~1 minute period
+					amp := 200.0 // ~4 bars amplitude
+					n := time.Now().UnixNano()
+					delta := math.Sin(freq*float64(n))*amp
+					deltaQuantity := resource.NewMilliQuantity(int64(delta), resource.DecimalExponent)
+					i.Value.Add(*deltaQuantity)
+					err = s.r.SimulatorClient.PutOutput(d.Name, i.Name, &i)
+					if err != nil {
+						utilruntime.HandleError(fmt.Errorf("failed to update device input for simulation: %v", err))
+						continue
+					}
+				}
+			}
+		}
+	}
+	wait.Until(fn, time.Millisecond * 500, stopCh)
+	return nil
+}
+
+func (r *DeviceReconciler) SimulatePressureChanges() manager.Runnable {
+	return &simulationRunnable{r}
 }
 
 func (r *DeviceReconciler) SetupWithManager(mgr ctrl.Manager) error {

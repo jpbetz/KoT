@@ -64,6 +64,15 @@ func (c *Client) PutDevice(device *v1alpha1.Device) error {
 	return c.put("/api/devices/" + device.Name, device)
 }
 
+func (c *Client) PutInput(deviceName, inputName string, value *v1alpha1.Value) error {
+	return c.put("/api/devices/" + deviceName + "/inputs/" + inputName, value)
+}
+
+// for simulation controller only
+func (c *Client) PutOutput(deviceName, inputName string, value *v1alpha1.Value) error {
+	return c.put("/api/devices/" + deviceName + "/outputs/" + inputName, value)
+}
+
 func (c *Client) put(path string, content interface{}) error {
 	data, err := json.Marshal(content)
 	if err != nil {

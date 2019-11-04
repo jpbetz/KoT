@@ -7,8 +7,9 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"k8s.io/apimachinery/pkg/api/resource"
 
-	"github.com/jpbetz/KoT/device-hub/service/types"
+	"github.com/jpbetz/KoT/simulator/service/types"
 )
 
 func websocketHandler(s *server, w http.ResponseWriter, r *http.Request) {
@@ -33,9 +34,10 @@ func websocketHandler(s *server, w http.ResponseWriter, r *http.Request) {
 		for _, device := range s.devices {
 			for _, input := range device.Status.ObservedInputs {
 				if moduleName, ok := s.deviceModules[device.Name]; ok {
-					m := &types.ValueChangedMessage{
+					m := &types.EventMessage{
+						Type: "value",
 						Path:  moduleName + "." + device.Name + "." + input.Name,
-						Value: input.Value,
+						Value: input.Value.AsDec().String(),
 					}
 					data, err := json.Marshal(m)
 					if err != nil {
@@ -47,9 +49,10 @@ func websocketHandler(s *server, w http.ResponseWriter, r *http.Request) {
 			}
 			for _, output := range device.Status.Outputs {
 				if moduleName, ok := s.deviceModules[device.Name]; ok {
-					m := &types.ValueChangedMessage{
+					m := &types.EventMessage{
+						Type: "value",
 						Path:  moduleName + "." + device.Name + "." + output.Name,
-						Value: output.Value,
+						Value: output.Value.AsDec().String(),
 					}
 					data, err := json.Marshal(m)
 					if err != nil {
@@ -83,7 +86,7 @@ type WebsocketManager struct {
 	clients map[*WebsocketClientConn]bool
 
 	// Inbound messages from the clients.
-	broadcast chan *types.ValueChangedMessage
+	broadcast chan *types.EventMessage
 
 	// Register requests from the clients.
 	register chan *WebsocketClientConn
@@ -94,11 +97,36 @@ type WebsocketManager struct {
 
 func newWebsocketManager() *WebsocketManager {
 	return &WebsocketManager{
-		broadcast:  make(chan *types.ValueChangedMessage),
+		broadcast:  make(chan *types.EventMessage),
 		register:   make(chan *WebsocketClientConn),
 		unregister: make(chan *WebsocketClientConn),
 		clients:    make(map[*WebsocketClientConn]bool),
 	}
+}
+
+func (h *WebsocketManager) SendValueChanged(path string, quantity resource.Quantity) {
+	msg := &types.EventMessage{
+		Type: "value",
+		Path:  path,
+		Value: quantity.AsDec().String(),
+	}
+	h.broadcast <- msg
+}
+
+func (h *WebsocketManager) SendModuleCreated(moduleName string) {
+	msg := &types.EventMessage{
+		Type: "module-created",
+		Path:  moduleName,
+	}
+	h.broadcast <- msg
+}
+
+func (h *WebsocketManager) SendModuleDeleted(moduleName string) {
+	msg := &types.EventMessage{
+		Type: "module-deleted",
+		Path:  moduleName,
+	}
+	h.broadcast <- msg
 }
 
 func (h *WebsocketManager) run() {
@@ -158,7 +186,7 @@ func (c *WebsocketClientConn) readPump() {
 			}
 			break
 		}
-		msg := &types.ValueChangedMessage{}
+		msg := &types.EventMessage{}
 		err = json.Unmarshal(message, msg)
 		if err != nil {
 			log.Printf("error: %v", err)

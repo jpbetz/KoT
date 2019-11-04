@@ -52,7 +52,16 @@ class App extends React.Component {
 	}
 
 	componentDidMount() {
-		api.getDataset(this.onLoaded.bind(this))
+		api.getDataset(this.onLoaded.bind(this));
+		api.addOnModuleChangedListener(this.onModulesChanged.bind(this));
+	}
+
+	componentWillUnmount() {
+		api.removeOnModuleChangedListener(this.onModulesChanged.bind(this));
+	}
+
+	onModulesChanged() {
+		api.getDataset(this.onLoaded.bind(this));
 	}
 
 	onLoaded(data) {
@@ -69,11 +78,11 @@ class App extends React.Component {
 					<div>Loading</div>
 			);
 		}
-	console.log(Object.values(this.state.modules));
+
 		return (
 				<div>
 					<Typography component="h1" variant="h2" align="center" color="textPrimary" gutterBottom>
-						Auqanetes Deep Sea Research Station
+						Deep Sea Research Station
 					</Typography>
 					<Container maxWidth="md" component="main">
 						<Grid container alignItems="flex-end" spacing={5}>

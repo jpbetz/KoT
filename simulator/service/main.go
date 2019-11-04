@@ -15,7 +15,6 @@ import (
 
 	deepseav1alpha1 "github.com/jpbetz/KoT/apis/deepsea/v1alpha1"
 	"github.com/jpbetz/KoT/apis/things/v1alpha1"
-	"github.com/jpbetz/KoT/device-hub/service/types"
 )
 
 func main() {
@@ -172,6 +171,7 @@ func (s *server) moduleHandler(w http.ResponseWriter, r *http.Request) {
 				existingDevice, ok := s.devices[deviceName]
 				if !ok {
 					http.Error(w, fmt.Sprintf("Module %s references non-existent device %s", moduleID, deviceName), http.StatusBadRequest)
+					return nil
 				}
 
 				if _, ok := s.deviceModules[deviceName]; !ok {
@@ -202,12 +202,16 @@ func (s *server) moduleHandler(w http.ResponseWriter, r *http.Request) {
 				}
 				s.deviceModules[deviceName] = updatedModule.Name
 			}
-			// TODO: notify
+
+			if !exists {
+				s.websockets.SendModuleCreated(moduleID)
+			}
 			return nil
 		})
 		return
 	case "DELETE":
 		delete(s.modules, moduleID)
+		s.websockets.SendModuleDeleted(moduleID)
 		w.WriteHeader(http.StatusOK)
 	default:
 		http.Error(w, "", http.StatusMethodNotAllowed)
@@ -298,11 +302,7 @@ func (s *server) inputHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			if moduleName, ok := s.deviceModules[deviceID]; ok {
-				msg := &types.ValueChangedMessage{
-					Path: moduleName + "." + deviceID + "." + inputID,
-					Value: valueIn.Value,
-				}
-				s.websockets.broadcast <-msg
+				s.websockets.SendValueChanged(moduleName + "." + deviceID + "." + inputID, valueIn.Value)
 			}
 			return nil
 		})
@@ -340,13 +340,10 @@ func (s *server) outputHandler(w http.ResponseWriter, r *http.Request) {
 	case "PUT":
 		valueIn := &v1alpha1.Value{}
 		applyPut(w, r, valueIn, func() error {
+			//log.Printf("putting output %v %v %v", deviceID, outputID, valueIn)
 			setValue(device.Status.Outputs, outputID, valueIn)
 			if moduleName, ok := s.deviceModules[deviceID]; ok {
-				msg := &types.ValueChangedMessage{
-					Path:  moduleName + "." + deviceID + "." + outputID,
-					Value: valueIn.Value,
-				}
-				s.websockets.broadcast <- msg
+				s.websockets.SendValueChanged(moduleName + "." + deviceID + "." + outputID, valueIn.Value)
 			}
 			return nil
 		})

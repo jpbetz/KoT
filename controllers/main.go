@@ -17,7 +17,7 @@ import (
 
 	"github.com/jpbetz/KoT/controllers/devicecontroller"
 	"github.com/jpbetz/KoT/controllers/modulecontroller"
-	"github.com/jpbetz/KoT/device-hub/service/client"
+	"github.com/jpbetz/KoT/simulator/service/client"
 )
 
 var (
@@ -59,8 +59,12 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Captain")
 		os.Exit(1)
 	}
-	if err = mgr.Add(deviceReconciler.SyncStatus()); err != nil {
+	if err = mgr.Add(deviceReconciler.SyncDevices()); err != nil {
 		setupLog.Error(err, "unable to add sync status runnable", "controller", "Captain")
+		os.Exit(1)
+	}
+	if err = mgr.Add(deviceReconciler.SimulatePressureChanges()); err != nil {
+		setupLog.Error(err, "unable to add simulation runnable", "controller", "Captain")
 		os.Exit(1)
 	}
 
@@ -74,7 +78,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Captain")
 		os.Exit(1)
 	}
-	if err = mgr.Add(moduleReconciler.SyncStatus()); err != nil {
+	if err = mgr.Add(moduleReconciler.SyncModules()); err != nil {
 		setupLog.Error(err, "unable to add sync status runnable", "controller", "Captain")
 		os.Exit(1)
 	}
