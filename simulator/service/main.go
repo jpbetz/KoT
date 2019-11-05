@@ -16,58 +16,23 @@ import (
 	"github.com/jpbetz/KoT/apis/things/v1alpha1"
 )
 
+type server struct {
+	mu         sync.Mutex
+	modules    map[string]*deepseav1alpha1.Module
+	devices    map[string]*v1alpha1.Device
+	deviceModules map[string]string
+	websockets *WebsocketManager
+}
+
 func main() {
 	var addr string
 	flag.StringVar(&addr, "addr", ":8085", "The address to bind to.")
 	flag.Parse()
 
 	s := &server{}
-	s.modules =  map[string]*deepseav1alpha1.Module{
-		// "command": {
-		// 	ObjectMeta: v1.ObjectMeta{Name: "command"},
-		// 	Spec: deepseav1alpha1.ModuleSpec{
-		// 		Devices: deepseav1alpha1.ModuleDevices{
-		// 			PressureSensor: "pressureSensor1",
-		// 			WaterAlarm:     "alarm1",
-		// 			Pump:           "pumps1",
-		// 		},
-		// 	},
-		// },
-	}
-	s.devices = map[string]*v1alpha1.Device{
-		// "pressureSensor1": {
-		// 	ObjectMeta: v1.ObjectMeta{Name: "pressureSensor1"},
-		// 	Spec: v1alpha1.DeviceSpec{},
-		// 	Status: v1alpha1.DeviceStatus{
-		// 		Outputs: []v1alpha1.Value{
-		// 			{Name: "pressure", Type: v1alpha1.FloatType, Value: quantity("10.0")},
-		// 		},
-		// 	},
-		// },
-		// "alarm1": {
-		// 	ObjectMeta: v1.ObjectMeta{Name: "alarm1"},
-		// 	Spec: v1alpha1.DeviceSpec{},
-		// 	Status: v1alpha1.DeviceStatus{
-		// 		Outputs: []v1alpha1.Value{
-		// 			{Name: "alarm", Type: v1alpha1.BooleanType, Value: quantity("0.0")},
-		// 		},
-		// 	},
-		// },
-		// "pumps1": {
-		// 	ObjectMeta: v1.ObjectMeta{Name: "pumps1"},
-		// 	Spec: v1alpha1.DeviceSpec{},
-		// 	Status: v1alpha1.DeviceStatus{
-		// 		ObservedInputs: []v1alpha1.Value{
-		// 			{Name: "activeCount", Type: v1alpha1.IntegerType, Value: quantity("1.0")},
-		// 		},
-		// 	},
-		// },
-	}
-	s.deviceModules = map[string]string{
-		// "pressureSensor1": "command",
-		// "alarm1": "command",
-		// "pumps1": "command",
-	}
+	s.modules =  map[string]*deepseav1alpha1.Module{}
+	s.devices = map[string]*v1alpha1.Device{}
+	s.deviceModules = map[string]string{}
 
 	s.websockets = newWebsocketManager()
 	go s.websockets.run()
@@ -92,22 +57,6 @@ func main() {
 	log.Println("Server is starting")
 	log.Fatal(server.ListenAndServe())
 }
-
-type server struct {
-	mu         sync.Mutex
-	modules    map[string]*deepseav1alpha1.Module
-	devices    map[string]*v1alpha1.Device
-	deviceModules map[string]string
-	websockets *WebsocketManager
-}
-
-const (
-	targetPressure = 10.0 // unit: bars, for depth of 90 meters
-	lowPressure = 8.0
-	emergencyPressure = 6.0
-	highPressure = 12.0
-	pressureDropPerSec = 0.05
-)
 
 func (s *server) everythingHandler(w http.ResponseWriter, r *http.Request) {
 	//log.Println(r.Method, r.URL.Path, r.RemoteAddr, r.UserAgent())
@@ -234,6 +183,7 @@ func (s *server) devicesHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) deviceHandler(w http.ResponseWriter, r *http.Request) {
+	//log.Println(r.Method, r.URL.Path, r.RemoteAddr, r.UserAgent())
 	vars := mux.Vars(r)
 	deviceID := vars["deviceID"]
 
@@ -256,7 +206,14 @@ func (s *server) deviceHandler(w http.ResponseWriter, r *http.Request) {
 				s.devices[deviceID] = updatedDevice
 			}
 
-			// TODO: notify
+			if moduleName, ok := s.deviceModules[deviceID]; ok {
+				if !exists {
+					s.websockets.SendModuleUpdated(moduleName)
+				}
+				for _, input := range updatedDevice.Spec.Inputs {
+					s.websockets.SendValueChanged(moduleName + "." + deviceID + "." + input.Name, input.Value)
+				}
+			}
 			return nil
 		})
 	case "DELETE":
@@ -269,7 +226,7 @@ func (s *server) deviceHandler(w http.ResponseWriter, r *http.Request) {
 }
 	
 func (s *server) inputHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println(r.Method, r.URL.Path, r.RemoteAddr, r.UserAgent())
+	//log.Println(r.Method, r.URL.Path, r.RemoteAddr, r.UserAgent())
 	vars := mux.Vars(r)
 	deviceID := vars["deviceID"]
 	inputID := vars["inputID"]
@@ -313,7 +270,7 @@ func (s *server) inputHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) outputHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println(r.Method, r.URL.Path, r.RemoteAddr, r.UserAgent())
+	//log.Println(r.Method, r.URL.Path, r.RemoteAddr, r.UserAgent())
 	vars := mux.Vars(r)
 	deviceID := vars["deviceID"]
 	outputID := vars["outputID"]

@@ -22,10 +22,7 @@ func websocketHandler(s *server, w http.ResponseWriter, r *http.Request) {
 	client := &WebsocketClientConn{websocketManager: s.websockets, conn: conn, send: make(chan []byte, 256)}
 	client.websocketManager.register <- client
 
-	// Allow collection of memory referenced by the caller by doing all work in
-	// new goroutines.
-	go client.writePump()
-	go client.readPump()
+	go client.writeSender()
 
 	// Send client full list of data to initialize with
 	func () {
@@ -76,9 +73,6 @@ const (
 
 	// Send pings to peer with this period. Must be less than pongWait.
 	pingPeriod = (pongWait * 9) / 10
-
-	// Maximum message size allowed from peer.
-	maxMessageSize = 512
 )
 
 type WebsocketManager struct {
@@ -129,6 +123,14 @@ func (h *WebsocketManager) SendModuleDeleted(moduleName string) {
 	h.broadcast <- msg
 }
 
+func (h *WebsocketManager) SendModuleUpdated(moduleName string) {
+	msg := &types.EventMessage{
+		Type: "module-updated",
+		Path:  moduleName,
+	}
+	h.broadcast <- msg
+}
+
 func (h *WebsocketManager) run() {
 	for {
 		select {
@@ -170,33 +172,7 @@ type WebsocketClientConn struct {
 	send chan []byte
 }
 
-func (c *WebsocketClientConn) readPump() {
-	defer func() {
-		c.websocketManager.unregister <- c
-		_ = c.conn.Close()
-	}()
-	c.conn.SetReadLimit(maxMessageSize)
-	_ = c.conn.SetReadDeadline(time.Now().Add(pongWait))
-	c.conn.SetPongHandler(func(string) error { _ = c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
-	for {
-		_, message, err := c.conn.ReadMessage()
-		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("error: %v", err)
-			}
-			break
-		}
-		msg := &types.EventMessage{}
-		err = json.Unmarshal(message, msg)
-		if err != nil {
-			log.Printf("error: %v", err)
-			continue
-		}
-		// TODO: write the message to server and broadcast if we want to support websocket writes
-	}
-}
-
-func (c *WebsocketClientConn) writePump() {
+func (c *WebsocketClientConn) writeSender() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
@@ -207,25 +183,40 @@ func (c *WebsocketClientConn) writePump() {
 		case message, ok := <-c.send:
 			_ = c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
-				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
+				err := c.conn.WriteMessage(websocket.CloseMessage, []byte{})
+				if err != nil {
+					log.Printf("error writing close message to websocket: %v", err)
+				}
 				return
 			}
 
-			w, err := c.conn.NextWriter(websocket.TextMessage)
-			if err != nil {
-				return
-			}
-			w.Write(message)
-
-			n := len(c.send)
-			for i := 0; i < n; i++ {
-				w.Write([]byte{'\n'})
-				w.Write(<-c.send)
-			}
-
-			if err := w.Close(); err != nil {
-				return
-			}
+			func() {
+				w, err := c.conn.NextWriter(websocket.TextMessage)
+				if err != nil {
+					return
+				}
+				defer func() {
+					if err := w.Close(); err != nil {
+						return
+					}
+				}()
+				_, err = w.Write(message)
+				if err != nil {
+					log.Printf("error writing message to websocket: %v", err)
+					return
+				}
+				n := len(c.send)
+				for i := 0; i < n; i++ {
+					_, err := w.Write([]byte{'\n'})
+					if err != nil {
+						log.Printf("error writing message to websocket: %v", err)
+					}
+					_, err = w.Write(<-c.send)
+					if err != nil {
+						log.Printf("error writing message to websocket: %v", err)
+					}
+				}
+			}()
 		case <-ticker.C:
 			_ = c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {

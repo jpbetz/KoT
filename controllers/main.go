@@ -15,8 +15,6 @@ import (
 
 	"github.com/jpbetz/KoT/apis/things/v1alpha1"
 
-	"github.com/jpbetz/KoT/controllers/devicecontroller"
-	"github.com/jpbetz/KoT/controllers/modulecontroller"
 	"github.com/jpbetz/KoT/simulator/service/client"
 )
 
@@ -42,6 +40,7 @@ func main() {
 	ctrl.SetLogger(klogr.New())
 
 	simulatorClient := &client.Client{Url: simulatorAddr, Client: &http.Client{}}
+	log := ctrl.Log.WithName("controllers").WithName("Captain")
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{Scheme: scheme, MetricsBindAddress: metricsAddr})
 	if err != nil {
@@ -49,9 +48,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	deviceReconciler := &devicecontroller.DeviceReconciler{
+	deviceReconciler := &DeviceReconciler{
 		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Captain"),
+		Log:    log,
 		SimulatorClient: simulatorClient,
 		Scheme: mgr.GetScheme(),
 	}
@@ -59,14 +58,20 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Captain")
 		os.Exit(1)
 	}
-	if err = mgr.Add(deviceReconciler.SyncDevices()); err != nil {
+
+	deviceSynchronizer := &deviceSynchronizer{
+		Client: mgr.GetClient(),
+		Log:    log,
+		SimulatorClient: simulatorClient,
+	}
+	if err = mgr.Add(deviceSynchronizer); err != nil {
 		setupLog.Error(err, "unable to add sync status runnable", "controller", "Captain")
 		os.Exit(1)
 	}
 
-	moduleReconciler := &modulecontroller.ModuleReconciler{
+	moduleReconciler := &ModuleReconciler{
 		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Captain"),
+		Log:    log,
 		SimulatorClient: simulatorClient,
 		Scheme: mgr.GetScheme(),
 	}
@@ -74,11 +79,23 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Captain")
 		os.Exit(1)
 	}
-	if err = mgr.Add(moduleReconciler.SyncModules()); err != nil {
+
+	moduleSynchronizer := &moduleSynchronizer{
+		Client: mgr.GetClient(),
+		Log:    log,
+		SimulatorClient: simulatorClient,
+	}
+	if err = mgr.Add(moduleSynchronizer); err != nil {
 		setupLog.Error(err, "unable to add sync status runnable", "controller", "Captain")
 		os.Exit(1)
 	}
-	if err = mgr.Add(moduleReconciler.SimulatePressureChanges()); err != nil {
+
+	simulation := &SimulationRunner{
+		Client: mgr.GetClient(),
+		Log:    log,
+		SimulatorClient: simulatorClient,
+	}
+	if err = mgr.Add(simulation); err != nil {
 		setupLog.Error(err, "unable to add simulation runnable", "controller", "Captain")
 		os.Exit(1)
 	}

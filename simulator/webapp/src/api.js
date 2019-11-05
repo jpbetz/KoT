@@ -55,6 +55,7 @@ rws.addEventListener('message', event => {
 					break;
 				case "module-created":
 				case "module-deleted":
+				case "module-updated":
 					for (let j = 0; j < onModuleChangedHandlers.length; j++) {
 						onModuleChangedHandlers[j](msg);
 					}
