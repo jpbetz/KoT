@@ -63,10 +63,6 @@ func main() {
 		setupLog.Error(err, "unable to add sync status runnable", "controller", "Captain")
 		os.Exit(1)
 	}
-	if err = mgr.Add(deviceReconciler.SimulatePressureChanges()); err != nil {
-		setupLog.Error(err, "unable to add simulation runnable", "controller", "Captain")
-		os.Exit(1)
-	}
 
 	moduleReconciler := &modulecontroller.ModuleReconciler{
 		Client: mgr.GetClient(),
@@ -80,6 +76,10 @@ func main() {
 	}
 	if err = mgr.Add(moduleReconciler.SyncModules()); err != nil {
 		setupLog.Error(err, "unable to add sync status runnable", "controller", "Captain")
+		os.Exit(1)
+	}
+	if err = mgr.Add(moduleReconciler.SimulatePressureChanges()); err != nil {
+		setupLog.Error(err, "unable to add simulation runnable", "controller", "Captain")
 		os.Exit(1)
 	}
 

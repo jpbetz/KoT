@@ -11,7 +11,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"k8s.io/apimachinery/pkg/api/resource"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	deepseav1alpha1 "github.com/jpbetz/KoT/apis/deepsea/v1alpha1"
 	"github.com/jpbetz/KoT/apis/things/v1alpha1"
@@ -24,50 +23,50 @@ func main() {
 
 	s := &server{}
 	s.modules =  map[string]*deepseav1alpha1.Module{
-		"command": {
-			ObjectMeta: v1.ObjectMeta{Name: "command"},
-			Spec: deepseav1alpha1.ModuleSpec{
-				Devices: deepseav1alpha1.ModuleDevices{
-					PressureSensor: "pressureSensor1",
-					WaterAlarm:     "alarm1",
-					Pump:           "pumps1",
-				},
-			},
-		},
+		// "command": {
+		// 	ObjectMeta: v1.ObjectMeta{Name: "command"},
+		// 	Spec: deepseav1alpha1.ModuleSpec{
+		// 		Devices: deepseav1alpha1.ModuleDevices{
+		// 			PressureSensor: "pressureSensor1",
+		// 			WaterAlarm:     "alarm1",
+		// 			Pump:           "pumps1",
+		// 		},
+		// 	},
+		// },
 	}
 	s.devices = map[string]*v1alpha1.Device{
-		"pressureSensor1": {
-			ObjectMeta: v1.ObjectMeta{Name: "pressureSensor1"},
-			Spec: v1alpha1.DeviceSpec{},
-			Status: v1alpha1.DeviceStatus{
-				Outputs: []v1alpha1.Value{
-					{Name: "pressure", Type: v1alpha1.FloatType, Value: quantity("10.0")},
-				},
-			},
-		},
-		"alarm1": {
-			ObjectMeta: v1.ObjectMeta{Name: "alarm1"},
-			Spec: v1alpha1.DeviceSpec{},
-			Status: v1alpha1.DeviceStatus{
-				Outputs: []v1alpha1.Value{
-					{Name: "alarm", Type: v1alpha1.BooleanType, Value: quantity("0.0")},
-				},
-			},
-		},
-		"pumps1": {
-			ObjectMeta: v1.ObjectMeta{Name: "pumps1"},
-			Spec: v1alpha1.DeviceSpec{},
-			Status: v1alpha1.DeviceStatus{
-				ObservedInputs: []v1alpha1.Value{
-					{Name: "activeCount", Type: v1alpha1.IntegerType, Value: quantity("1.0")},
-				},
-			},
-		},
+		// "pressureSensor1": {
+		// 	ObjectMeta: v1.ObjectMeta{Name: "pressureSensor1"},
+		// 	Spec: v1alpha1.DeviceSpec{},
+		// 	Status: v1alpha1.DeviceStatus{
+		// 		Outputs: []v1alpha1.Value{
+		// 			{Name: "pressure", Type: v1alpha1.FloatType, Value: quantity("10.0")},
+		// 		},
+		// 	},
+		// },
+		// "alarm1": {
+		// 	ObjectMeta: v1.ObjectMeta{Name: "alarm1"},
+		// 	Spec: v1alpha1.DeviceSpec{},
+		// 	Status: v1alpha1.DeviceStatus{
+		// 		Outputs: []v1alpha1.Value{
+		// 			{Name: "alarm", Type: v1alpha1.BooleanType, Value: quantity("0.0")},
+		// 		},
+		// 	},
+		// },
+		// "pumps1": {
+		// 	ObjectMeta: v1.ObjectMeta{Name: "pumps1"},
+		// 	Spec: v1alpha1.DeviceSpec{},
+		// 	Status: v1alpha1.DeviceStatus{
+		// 		ObservedInputs: []v1alpha1.Value{
+		// 			{Name: "activeCount", Type: v1alpha1.IntegerType, Value: quantity("1.0")},
+		// 		},
+		// 	},
+		// },
 	}
 	s.deviceModules = map[string]string{
-		"pressureSensor1": "command",
-		"alarm1": "command",
-		"pumps1": "command",
+		// "pressureSensor1": "command",
+		// "alarm1": "command",
+		// "pumps1": "command",
 	}
 
 	s.websockets = newWebsocketManager()

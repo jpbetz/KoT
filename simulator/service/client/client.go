@@ -69,8 +69,8 @@ func (c *Client) PutInput(deviceName, inputName string, value *v1alpha1.Value) e
 }
 
 // for simulation controller only
-func (c *Client) PutOutput(deviceName, inputName string, value *v1alpha1.Value) error {
-	return c.put("/api/devices/" + deviceName + "/outputs/" + inputName, value)
+func (c *Client) PutOutput(deviceName, outputName string, value *v1alpha1.Value) error {
+	return c.put("/api/devices/" + deviceName + "/outputs/" +outputName, value)
 }
 
 func (c *Client) put(path string, content interface{}) error {
