@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"math"
 
 	"github.com/go-logr/logr"
 	deepseav1alpha1 "github.com/jpbetz/KoT/apis/deepsea/v1alpha1"
@@ -93,23 +94,9 @@ func (r *DeviceReconciler) ReconcilePressure(pressureDevice v1alpha1.Device) err
 			}
 
 			// calculate how many pumps to activate
-			v := float64(pressure.Value.MilliValue()) / 1000
-			var pumps int64
-			switch {
-			case v > desiredPressure+1:
-				pumps = 0
-			case v > desiredPressure+0.5:
-				pumps = 1
-			case v > desiredPressure+0.1:
-				pumps = 2
-			case v < desiredPressure-1:
-				pumps = 5
-			case v < desiredPressure-0.5:
-				pumps = 4
-			case v < desiredPressure-0.1:
-				pumps = 3
-			}
-			pump.Value.Set(pumps)
+			currentPressure := float64(pressure.Value.MilliValue()) / 1000
+			activePumps := calculateActivePumps(currentPressure)
+			pump.Value.Set(activePumps)
 
 			// activate the pumps
 			if !setInputValue(pumpDevice, pump.Name, pump.Value) {
@@ -122,6 +109,15 @@ func (r *DeviceReconciler) ReconcilePressure(pressureDevice v1alpha1.Device) err
 		}
 	}
 	return nil
+}
+
+func calculateActivePumps(pressure float64) int64 {
+	// We have 5 pumps, and don't want the pressure to exceed 0.5 in either direction
+	count := 2.5 + (desiredPressure - pressure)*(2.5/0.5)
+	count = math.Max(count, 0)
+	count = math.Min(count, 5)
+	count = math.Round(count)
+	return int64(count)
 }
 
 func (r *DeviceReconciler) SetupWithManager(mgr ctrl.Manager) error {

@@ -1,7 +1,7 @@
 import ReconnectingWebSocket from 'reconnecting-websocket';
 
-//const rws = new ReconnectingWebSocket('ws://' + window.location.host + '/ws');
-const rws = new ReconnectingWebSocket('ws://localhost:8085/ws');
+const rws = new ReconnectingWebSocket('ws://' + window.location.host + '/ws');
+//const rws = new ReconnectingWebSocket('ws://localhost:8085/ws');
 
 const onUpdateHandlers = {};
 

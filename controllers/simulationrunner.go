@@ -81,22 +81,10 @@ func (s *SimulationRunner) Start(stopCh <-chan struct{}) error {
 				return
 			}
 
-			// Calculate the simulated net change in pressure for the current iteration
+			change := calculatePressureChange(pump.Value.Value())
 
-			// Use a wave to simulate environmental pressure changes.
-			freq := 1e-10 // ~1 minute period
-			amp := 200.0  // ~4 bars amplitude
-			n := time.Now().UnixNano()
-			simPressureChange := math.Sin(freq*float64(n)) * amp
-
-			// 2.5 pumps are required for equilibrium
-			// calculate pressure change if pumps are not at equilibrium
-			pumpVal := float64(pump.Value.Value())
-			pumpPressureChange := (pumpVal - 2.5) * 100
-
-			change := simPressureChange + pumpPressureChange
-			deltaQuantity := resource.NewMilliQuantity(int64(change), resource.DecimalExponent)
-			pressure.Value.Add(*deltaQuantity)
+			changeQuantity := resource.NewMilliQuantity(int64(change), resource.DecimalExponent)
+			pressure.Value.Add(*changeQuantity)
 
 			// Write simulated pressure to device
 			err = s.SimulatorClient.PutOutput(pressureDevice.Name, pressure.Name, &pressure)
@@ -108,4 +96,21 @@ func (s *SimulationRunner) Start(stopCh <-chan struct{}) error {
 	}
 	wait.Until(fn, time.Millisecond * 500, stopCh)
 	return nil
+}
+
+func calculatePressureChange(pumpsActive int64) float64 {
+	// Calculate the simulated net change in pressure for the current iteration
+
+	// Use a wave to simulate environmental pressure changes.
+	freq := 1e-10 // ~1 minute period
+	amp := 200.0  // ~4 bars amplitude
+	n := time.Now().UnixNano()
+	simPressureChange := math.Sin(freq*float64(n)) * amp
+
+	// 2.5 pumps are required for equilibrium
+	// calculate pressure change if pumps are not at equilibrium
+	pumpVal := float64(pumpsActive)
+	pumpPressureChange := (pumpVal - 2.5) * 100
+
+	return simPressureChange + pumpPressureChange
 }

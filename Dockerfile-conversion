@@ -15,7 +15,7 @@
 FROM golang:1.12 as build
 WORKDIR /go/src/github.com/jpbetz/KoT
 
-COPY vendor* ./vendor/
+#COPY vendor* ./vendor/
 COPY go.mod go.sum ./
 RUN bash -c "test -d vendor || GO111MODULE=on go mod download"
 
