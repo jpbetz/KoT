@@ -1,0 +1,11 @@
+apiVersion: deepsea.kubecon.io/v1alpha1
+kind: Module
+metadata:
+  name: crew
+  namespace: examples
+spec:
+  devices:
+    pump: crew-pump
+    waterAlarm: crew-water
+    pressureSensor: crew-pressure
+status: {}

@@ -33,7 +33,7 @@ func (r *DeviceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	var device v1alpha1.Device
 	if err := r.Get(ctx, req.NamespacedName, &device); err != nil {
-		log.Error(err, "unable to fetch Device")
+		log.Error(err, "Failed to fetch Device")
 		return ctrl.Result{}, ignoreNotFound(err)
 	}
 
@@ -41,7 +41,7 @@ func (r *DeviceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	if _, ok := getOutput(device, "pressure"); ok {
 		err := r.ReconcilePressure(device)
 		if err != nil {
-			return ctrl.Result{}, err
+			log.Error(err, "Failed to reconcile pressure")
 		}
 	}
 

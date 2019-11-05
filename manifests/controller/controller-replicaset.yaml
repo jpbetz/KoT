@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: controllers-replicaset
+  labels:
+    app: deepsea-controllers
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: deepsea-controllers
+  template:
+    metadata:
+      labels:
+        app: deepsea-controllers
+    spec:
+      containers:
+        - name: deapsea-controllers-container
+          image: gcr.io/jpbetz-public-images/deepsea-controllers:latest
+          command: ["/controllers"]
+          args: ["-simulator-addr", "http://$(DEEPSEA_SIMULATOR_SERVICE_PORT_80_TCP_ADDR):$(DEEPSEA_SIMULATOR_SERVICE_PORT_80_TCP_PORT)"]

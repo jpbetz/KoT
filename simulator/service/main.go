@@ -38,6 +38,12 @@ func main() {
 	go s.websockets.run()
 	router := mux.NewRouter()
 	router.HandleFunc("/api/", s.everythingHandler)
+	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		_, err := fmt.Fprintf(w, "healthy")
+		if err != nil {
+			http.Error(w, "Name in request does not match Name in path", http.StatusInternalServerError)
+		}
+	})
 	router.HandleFunc("/api/modules", s.modulesHandler)
 	router.HandleFunc("/api/modules/{moduleID}", s.moduleHandler)
 	router.HandleFunc("/api/devices", s.devicesHandler)
@@ -114,41 +120,10 @@ func (s *server) moduleHandler(w http.ResponseWriter, r *http.Request) {
 					delete(s.deviceModules, d)
 				}
 			}
-			newDevices := updatedModule.Spec.Devices
-			for kind, deviceName := range map[string]string{"pump": newDevices.Pump, "alarm": newDevices.WaterAlarm, "pressure": newDevices.PressureSensor} {
-				existingDevice, ok := s.devices[deviceName]
-				if !ok {
-					http.Error(w, fmt.Sprintf("Module %s references non-existent device %s", moduleID, deviceName), http.StatusBadRequest)
-					return nil
-				}
-
-				if _, ok := s.deviceModules[deviceName]; !ok {
-					// device is being registered
-					switch kind {
-					case "pump":
-						existingDevice.Status = v1alpha1.DeviceStatus{
-							ObservedInputs: []v1alpha1.Value{
-								{Name: "activeCount", Type: v1alpha1.IntegerType, Value: quantity("1.0")},
-							},
-						}
-					case "alarm":
-						existingDevice.Status = v1alpha1.DeviceStatus{
-							Outputs: []v1alpha1.Value{
-								{Name: "alarm", Type: v1alpha1.BooleanType, Value: quantity("0.0")},
-							},
-						}
-					case "pressure":
-						existingDevice.Status = v1alpha1.DeviceStatus{
-							Outputs: []v1alpha1.Value{
-								{Name: "pressure", Type: v1alpha1.FloatType, Value: quantity("10.0")},
-							},
-						}
-					default:
-						http.Error(w, fmt.Sprintf("Unrecognized kind: %s", kind), http.StatusInternalServerError)
-					}
-
-				}
-				s.deviceModules[deviceName] = updatedModule.Name
+			err := s.updateModuleDevices(updatedModule)
+			if err != nil {
+				// module update is best effort, continue on if it fails
+				log.Printf("Module update failed: %v", err)
 			}
 
 			if !exists {
@@ -204,6 +179,11 @@ func (s *server) deviceHandler(w http.ResponseWriter, r *http.Request) {
 				s.devices[deviceID].Spec = updatedDevice.Spec
 			} else {
 				s.devices[deviceID] = updatedDevice
+			}
+
+			err := s.applyDeviceStatuses(s.devices[deviceID])
+			if err != nil {
+				log.Printf("Device status update failed: %v", err)
 			}
 
 			if moduleName, ok := s.deviceModules[deviceID]; ok {
@@ -310,6 +290,48 @@ func (s *server) outputHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (s *server) updateModuleDevices(m *deepseav1alpha1.Module) error {
+	devices := m.Spec.Devices
+	for _, deviceName := range []string{devices.Pump, devices.WaterAlarm, devices.PressureSensor} {
+		s.deviceModules[deviceName] = m.Name
+		if existingDevice, ok := s.devices[deviceName]; ok {
+			err := s.applyDeviceStatuses(existingDevice)
+			if err != nil {
+				log.Printf("Failed to update device status: %v", err)
+			}
+		}
+	}
+	return nil
+}
+
+func (s *server) applyDeviceStatuses(d *v1alpha1.Device) error {
+	if moduleName, ok := s.deviceModules[d.Name]; ok {
+		if m, ok := s.modules[moduleName]; ok {
+			moduleDevices := m.Spec.Devices
+			switch d.Name {
+			case moduleDevices.Pump:
+				if _, found := getValue(d.Status.ObservedInputs, "activeCount"); !found {
+					v := v1alpha1.Value{Name: "activeCount", Type: v1alpha1.IntegerType, Value: quantity("1.0")}
+					d.Status.ObservedInputs = append(d.Status.ObservedInputs, v)
+				}
+			case moduleDevices.WaterAlarm:
+				if _, found := getValue(d.Status.Outputs, "alarm"); !found {
+					v := v1alpha1.Value{Name: "alarm", Type: v1alpha1.BooleanType, Value: quantity("0.0")}
+					d.Status.ObservedInputs = append(d.Status.ObservedInputs, v)
+				}
+			case moduleDevices.PressureSensor:
+				if _, found := getValue(d.Status.ObservedInputs, "pressure"); !found {
+					v := v1alpha1.Value{Name: "pressure", Type: v1alpha1.FloatType, Value: quantity("10.0")}
+					d.Status.ObservedInputs = append(d.Status.ObservedInputs, v)
+				}
+			default:
+				return fmt.Errorf("unrecognized device: %s", d.Name)
+			}
+		}
+	}
+	return nil
+}
+
 func applyPut(w http.ResponseWriter, r *http.Request, out interface{}, fn func() error) {
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(out)
@@ -375,3 +397,4 @@ var typesMap = map[string]v1alpha1.Type{
 	"activeCount": v1alpha1.IntegerType,
 	"pressure":    v1alpha1.FloatType,
 }
+
