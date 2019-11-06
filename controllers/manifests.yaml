@@ -1,0 +1,48 @@
+kind: ServiceAccount
+apiVersion: v1
+metadata:
+  name: deepsea-controllers
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: deepsea-controllers-role
+rules:
+  - apiGroups: ["things.kubecon.io", "deepsea.kubecon.io"]
+    resources: ["devices", "modules"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: deepsea-controllers-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: deepsea-controllers-role
+subjects:
+  - kind: ServiceAccount
+    name: deepsea-controllers
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controllers-deployment
+  labels:
+    app: deepsea-controllers
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: deepsea-controllers
+  template:
+    metadata:
+      labels:
+        app: deepsea-controllers
+    spec:
+      serviceAccountName: deepsea-controllers
+      containers:
+        - name: deapsea-controllers-container
+          image: gcr.io/jpbetz-public-images/deepsea-controllers:latest
+          command: ["/manager"]
+          args: ["-simulator-addr", "http://$(DEEPSEA_SIMULATOR_SERVICE_PORT_80_TCP_ADDR):$(DEEPSEA_SIMULATOR_SERVICE_PORT_80_TCP_PORT)"]

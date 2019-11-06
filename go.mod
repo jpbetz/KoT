@@ -8,7 +8,6 @@ require (
 	github.com/gorilla/mux v1.7.3
 	github.com/gorilla/websocket v1.4.1
 	github.com/imdario/mergo v0.3.8 // indirect
-	github.com/jpbetz/KoT/apis v0.0.0-20191105232633-875cc9c04d65
 	github.com/spf13/pflag v1.0.3
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
 	k8s.io/api v0.0.0-20191105190043-25240d7d6d90

@@ -1,6 +1,6 @@
 SHELL = bash
 
-OUTPUT := ../manifests/devices-crd.yaml manifests.yaml
+OUTPUT := ../manifests/kubernetes-1.15-crds/devices-crd.yaml manifests.yaml
 
 all: tls.key tls.crt $(OUTPUT)
 
