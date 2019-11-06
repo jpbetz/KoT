@@ -34,6 +34,22 @@ push-simulator:
 		docker push $(DOCKER_ORG)/deepsea-simulator:latest
 		sed 's,image: .*$$,image: $(DOCKER_ORG)/deepsea-simulator@'$$(docker inspect --format='{{index .RepoDigests 0}}' $(DOCKER_ORG)/deepsea-simulator | cut -f2 -d@)',' simulator/manifests.yaml > simulator/manifests.yaml.updated && mv simulator/manifests.yaml.updated simulator/manifests.yaml
 
+.PHONY: cloudbuild-conversion
+cloudbuild-conversion:
+		gcloud builds submit --config cloudbuild/conversion.yaml .
+
+.PHONY: cloudbuild-admission
+cloudbuild-admission:
+		gcloud builds submit --config cloudbuild/admission.yaml .
+
+.PHONY: cloudbuild-controllers
+cloudbuild-controllers:
+		gcloud builds submit --config cloudbuild/controllers.yaml .
+
+.PHONY: cloudbuild-simulator
+cloudbuild-simulator:
+		gcloud builds submit --config cloudbuild/simulator.yaml .
+
 
 clean:
 		rm -f tls.key tls.crt
