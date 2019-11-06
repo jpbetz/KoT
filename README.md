@@ -68,4 +68,18 @@ $ kubectl apply -f examples/research-module
 <explain how the pump rules work>
 
 $ make build-controllers
-$
+$ TODO: make push-controllers, where to?
+
+<edit manifests/controller/controllers-replicaset.yaml, update the container image>
+
+<update the running pods. TODO: use deployment instead of replica set?>
+
+6. Introduce v1 of our CRDs
+
+TODO
+
+7. Add a conversion webhook
+
+TODO
+
+8. Demonstrate how we can access our reousrces via the v1 API
