@@ -4,102 +4,146 @@ KoT
 Steps
 ----
 
-1. Create a cluster
+## 1. Create a cluster
 
-TODO
+### Bring your own cluster:
 
-2. Development environment
+Must be kubernetes 1.16!
 
-DYI:
+### Cloud:
 
-<run a local kubernetes cluster, or use an existing dev cluster you have available>
-<Must be kubernetes 1.16!>
+Log into a GCE account.
 
+Create a gke cluster. Must be kubernetes 1.16!
+
+## 2. Development environment
+
+### Bring your own cluster:
+
+```
 $ git clone https://github.com/jpbetz/KoT.git
 $ cd KoT
+```
 
-<Open the project in your editor of choice>
+Open the project in your editor of choice.
 
-Cloud:
+### Cloud:
 
-<log into a gce account>
-<create a gke cluster for kubernetes 1.16>
-<open cloud shell from the GKE cluster view so that the terminal is configured to connect to the cluster>
+Open cloud shell from the GKE cluster view so that the terminal is configured to connect to the cluster. (cloud only)
 
-$ git clone https://github.com/jpbetz/KoT.git
-$ cd KoT
+Checkout the tutorial project:
 
-<Click on editor button on top right of cloud shell screen to get a basic editor>
+Click on editor button on top right of cloud shell screen to get a basic editor.
 
-2. Run the simulator
+## 3. Deploy the tutorial simulator into the cluster
 
+```
 $ kubectl apply -f manifests/simulator
 $ kubectl get ing 
 NAME                HOSTS   ADDRESS          PORTS   AGE
 simulator-ingress   *       35.244.159.176   80      156m
+```
 
-<navigate to the simulator-ingress IP in a browser, it can take awhile for the ingress to get ready...>
+Navigate to the simulator-ingress IP in a browser, it can take awhile for the ingress to get ready.
 
-3. Run the controller
+## 4. Deploy the tutorial controller into the cluster
 
+```
 $ kubectl apply -f manifests/controllers
+```
 
-4. Create our main CRDs and resources
+## 5. Install CRDs and resources
 
-$ kubectl apply -f manifests/v1beta1-crds
+```
+$ kubectl apply -f manifests/kubernetes-1.16-crds
 $ kubectl apply -f examples/command-module
 $ kubectl apply -f examples/crew-module
 $ kubectl apply -f examples/research-module
+```
 
-<check the simulator UI, it should be more interesting now>
+Check the simulator UI, it should be more interesting now.
 
-5. Add reconciliation to the controller
+## 6. Add reconciliation to the controller
 
-<edit controllers/devicereconciler.go>
-<go to the ReconcilePressure function>
-<find the TODO to add calculate how to change pressure>
-<explain how the pump rules work>
+Edit controllers/devicereconciler.go
 
-6. Build and publish a docker image of the controller
+Find the `ReconcilePressure` function. Find the TODO to add calculate how to change pressure. Implement it.
 
-DYI:
+## 7. Build and publish a docker image of the controller
 
+### DYI
+
+```
 $ make build-controllers
 $ make push-controllers
+```
+
+### Cloud
+
+TODO: Enable GCR?
+TODO: Enable cloud build?
+
+```
+$ gcloud builds submit --config cloudbuild/controllers.yaml .
 
 
-Cloud:
-
-<enable gcr?>
-<enable cloud build>
-
-$gcloud builds submit --config cloudbuild/controllers.yaml .
-
-...
 DONE
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ID                                    CREATE_TIME                DURATION  SOURCE                                                                                    IMAGES                                                     STATUS
 3589a20b-2bfd-4139-8c09-081339b88677  2019-11-06T01:02:42+00:00  4M55S     gs://jpbetz-gke-dev_cloudbuild/source/1573002074.94-2e8786cc06794d6ab74a553cba67b298.tgz  gcr.io/jpbetz-gke-dev/things-conversion-webhook (+1 more)  SUCCESS
+```
 
+## 8. Run the updated controller
 
-7. Run the updated controller
+Edit `manifests/controller/controllers-replicaset.yaml`, replace the container image with the newly published one.
 
-<edit manifests/controller/controllers-replicaset.yaml, update the container image>
+TODO: restart the controller. Use deployment instead of replica set?
 
-<update the running pods. TODO: use deployment instead of replica set?>
+## 9. Introduce v1 of our CRDs
 
-8. Introduce v1 of our CRDs
+## 10. Add a conversion webhook
 
-TODO
+### DYI
 
-9. Add a conversion webhook
+```
+$ make build-conversion
+$ make push-conversion
+```
 
-TODO
+### Cloud
 
-10. Demonstrate how we can access our reousrces via the v1 API
+```
+$ gcloud builds submit --config cloudbuild/conversion.yaml .
+````
 
-Local
------
+Enable v1 of our CRDs.
+
+Edit `manifests/kubernetes-1.16-crds/devices-crd.yaml`, set served to true for `v1`.
+
+```
+$ kubectl apply -f manifests/kubernetes-1.16-crds
+```
+
+## 11. How to access resources at different versions
+
+To get a resource at `v1`:
+
+```
+$ kubectl get -n examples devices research-pressure -o yaml
+```
+
+To get the resource at `v1alpha1`, ask for it explicitly:
+
+```
+$ kubectl get -n examples devices.v1alpha1.things.kubecon.io research-pressure -o yaml
+```
+
+## TODO
+
+What else?
+
+Local Docker Testing
+--------------------
 
 ```sh
 
