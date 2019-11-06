@@ -15,10 +15,9 @@
 FROM golang:1.12 as build
 WORKDIR /go/src/github.com/jpbetz/KoT
 COPY . .
-WORKDIR controllers
-RUN CGO_ENABLED=0 GOOS=linux GO111MODULE=on go build -mod vendor .
+RUN CGO_ENABLED=0 GOOS=linux GO111MODULE=on go build -o manager -mod vendor ./controllers
 
 FROM alpine:latest
 RUN apk --no-cache add ca-certificates
-COPY --from=build /go/src/github.com/jpbetz/KoT/controllers/controllers /
-ENTRYPOINT ["/controllers"]
+COPY --from=build /go/src/github.com/jpbetz/KoT/manager /
+ENTRYPOINT ["/manager"]
