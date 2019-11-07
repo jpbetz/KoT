@@ -1,0 +1,9 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: simulator-ingress
+  namespace: deepsea
+spec:
+  backend:
+    serviceName: deepsea-simulator-service
+    servicePort: 80

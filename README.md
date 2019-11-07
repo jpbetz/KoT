@@ -4,17 +4,46 @@ KoT
 Steps
 ----
 
+## 0. Getting ready
+
+The step by step directions are also available at <shortlink>
+
+Please do not work ahead! Much of the value in this Tutorial will the explanations we
+provide as we go.
+
+Following along as we go trough this tutorial is encouraged, but not
+required.
+
+Warning: While we hope everyone is able to follow along. We've got xyz people in a large
+room and the wifi might not cooperate. We're doing a couple things to try to make this work:
+
+- We will try to minimize the bandwidth required
+- We've provided two ways to catch up if you fall behind:
+  - Each step of the process we show here has a corresponding git commit, the command to catch up will
+    be displayed on the bottom on each slide
+  - All docker images we create during the session are available in docker.io. If you're unable to get
+    one built and published, just use the one we provide.
+  - If you are unable get the UI working, or just don't want to enable it, we have a command line
+    operation that provides similar output
+
 ## 1. Create a cluster
 
 ### Bring your own cluster:
 
-Must be kubernetes 1.16!
+Feel free to use your own kubernetes cluster.
+
+Any 1.16+ cluster should be fine.
+Local clusters via minikube or `kubernetes/local-up-cluster.sh` should be fine.
+
+(We have a 1.15 example, but it does not highlight the functionality nearly as well)
 
 ### Cloud:
 
-Log into a GCE account.
+Create a gke cluster. Must be kubernetes 1.16! Need to click on "rapid" to find the 1.16 option.
 
-Create a gke cluster. Must be kubernetes 1.16!
+Enable gcloud build: https://pantheon.corp.google.com/apis/library/cloudbuild.googleapis.com (we'll be using free tier)
+
+TODO: add detailed cluster creation steps
 
 ## 2. Development environment
 
@@ -38,15 +67,35 @@ Click on editor button on top right of cloud shell screen to get a basic editor.
 ## 3. Deploy the tutorial simulator into the cluster
 
 ```
-$ kubectl apply -f manifests/simulator
+$ kubectl apply -f simulator/manifests.yaml
+```
+
+It provides a web UI. It can be accessed either via kube-proxy
+or by adding an ingress.
+
+### Accessing Simulator UI - kube-proxy
+
+```
+POD=kubectl -n default get pods -o name -l app=deepsea-simulator
+kubectl -n default port-forward "${POD}" 8080:8085
+```
+
+Navigate to http://localhost:8080 in a browser.
+
+### Accessing Simulator UI - ingress
+
+```
 $ kubectl get ing 
 NAME                HOSTS   ADDRESS          PORTS   AGE
 simulator-ingress   *       35.244.159.176   80      156m
 ```
 
-Navigate to the simulator-ingress IP in a browser, it can take awhile for the ingress to get ready.
+When the ingress is ready, we can navigate to the simulator-ingress IP in a browser.
+For now, just continue on getting things set up.
 
-## 4. Deploy the tutorial controller into the cluster
+## 4. Deploy the tutorial controllers into the cluster
+
+TODO: Include how types are generated before this?
 
 ```
 $ kubectl apply -f manifests/controllers
@@ -63,6 +112,16 @@ $ kubectl apply -f examples/research-module
 
 Check the simulator UI, it should be more interesting now.
 
+(at this step, the simulator should be varying the pressure, but nothing else should be happening).
+
+If the UI is inaccessible, or you just would rather use the terminal, instead, do:
+
+```
+watch -n 0.1 kubectl get -n examples devices
+```
+
+This provides outputs for each field using the additionalPrintColumns in the CRD.
+
 ## 6. Add reconciliation to the controller
 
 Edit controllers/devicereconciler.go
@@ -71,7 +130,7 @@ Find the `ReconcilePressure` function. Find the TODO to add calculate how to cha
 
 ## 7. Build and publish a docker image of the controller
 
-### DYI
+### Bring your own cluster
 
 ```
 $ make build-controllers
@@ -101,43 +160,31 @@ Edit `controllers/manifests.yaml`, and set the image to the just published to th
 kubectl apply -f controllers/manifests.yaml
 ```
 
-TODO: restart the controller. Use deployment instead of replica set?
-
 ## 9. Introduce v1 of our CRDs
 
-Open 
+In `manifests/kubernetes-1.16-crds/devices-crd.yaml`
+note that a `v1` version is defined but disabled.
+We cannot enable it until we have a way to converting
+between v1alpha1 and v1.
 
-## 10. Add a conversion webhook
+## 10. Implement a conversion webhook
 
+TODO: What code edits should we add here?
 
-### Intall the conversion webhook service
+### Install the conversion webhook service
 
-First, start the conversion webhook:
-
-```
-kubectl apply -f conversion/manifests.yaml
-```
-
-### Bring your own cluster:
+#### Bring your own cluster:
 
 ```
 $ make build-conversion
 $ make push-conversion
 ```
 
-### Cloud
+#### Cloud
 
 ```
 $ gcloud builds submit --config cloudbuild/conversion.yaml .
 ````
-
-Enable v1 of our CRDs.
-
-Edit `manifests/kubernetes-1.16-crds/devices-crd.yaml`, set served to true for `v1`.
-
-```
-$ kubectl apply -f manifests/kubernetes-1.16-crds
-```
 
 ### Register the conversion webhook
 
@@ -161,6 +208,14 @@ spec:
 
 ```
 kubectl apply -f manifests/kubernetes-1.15-crds/devices-crd.yaml
+```
+
+### Enable v1 of our CRDs
+
+Edit `manifests/kubernetes-1.16-crds/devices-crd.yaml`, set served to true for `v1`.
+
+```
+$ kubectl apply -f manifests/kubernetes-1.16-crds
 ```
 
 ## 11. How to access resources at different versions

@@ -25,6 +25,16 @@ spec:
         namespace: things
         name: conversion-webhook
         path: /convert/v1/devices
+  additionalPrinterColumns:
+    - name: Pressure
+      type: string
+      JSONPath: .status.outputs[?(@.name=='pressure')].value
+    - name: Pumps
+      type: string
+      JSONPath: .spec.inputs[?(@.name=='activeCount')].value
+    - name: Alarm
+      type: string
+      JSONPath: .status.outputs[?(@.name=='alarm')].value
   validation:
     "openAPIV3Schema":
       description: Device is a specification for a device in a deep see station.

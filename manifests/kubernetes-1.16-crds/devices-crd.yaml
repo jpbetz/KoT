@@ -107,6 +107,16 @@ spec:
   - name: v1alpha1
     served: true
     storage: true
+    additionalPrinterColumns:
+      - name: Pressure
+        type: string
+        JSONPath: .status.outputs[?(@.name=='pressure')].value
+      - name: Pumps
+        type: string
+        JSONPath: .spec.inputs[?(@.name=='activeCount')].value
+      - name: Alarm
+        type: string
+        JSONPath: .status.outputs[?(@.name=='alarm')].value
     "schema":
       "openAPIV3Schema":
         description: Device is a specification for a device in a deep see station.

@@ -39,13 +39,3 @@ spec:
           image: gcr.io/jpbetz-public-images/deepsea-simulator:latest
           ports:
             - containerPort: 8085
----
-apiVersion: extensions/v1beta1
-kind: Ingress
-metadata:
-  name: simulator-ingress
-  namespace: deepsea
-spec:
-  backend:
-    serviceName: deepsea-simulator-service
-    servicePort: 80
