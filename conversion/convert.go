@@ -79,14 +79,22 @@ func convertValueToV1(in *v1alpha1.Value) *v1.Value {
 	return ret
 }
 
-func convertValuesToV1alpha1(in []v1.Value) (ret []v1alpha1.Value) {
+func convertValuesToV1alpha1(in []v1.Value) []v1alpha1.Value {
+	if in == nil {
+		return nil
+	}
+	ret := make([]v1alpha1.Value, 0, len(in))
 	for _, v := range in {
 		ret = append(ret, *convertValueToV1alpha(&v))
 	}
 	return ret
 }
 
-func convertValuesToV1(in []v1alpha1.Value) (ret []v1.Value) {
+func convertValuesToV1(in []v1alpha1.Value) []v1.Value {
+	if in == nil {
+		return nil
+	}
+	ret := make([]v1.Value, 0, len(in))
 	for _, v := range in {
 		ret = append(ret, *convertValueToV1(&v))
 	}
