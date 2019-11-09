@@ -84,7 +84,7 @@ func main() {
 
 	// register handlers
 	mux := http.NewServeMux()
-	mux.Handle("/convert/v1/devices", http.HandlerFunc(conversion.Serve))
+	mux.Handle("/convert/v1beta1/devices", http.HandlerFunc(conversion.Serve))
 
 	// run server
 	if doneCh, err := cfg.SecureServing.Serve(handlers.LoggingHandler(os.Stdout, mux), time.Second*30, stopCh); err != nil {

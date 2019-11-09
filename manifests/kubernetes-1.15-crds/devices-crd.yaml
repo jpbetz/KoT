@@ -24,7 +24,7 @@ spec:
       service:
         namespace: things
         name: conversion-webhook
-        path: /convert/v1/devices
+        path: /convert/v1beta1/devices
   additionalPrinterColumns:
     - name: Pressure
       type: string
