@@ -226,6 +226,6 @@ spec:
         service:
           namespace: things
           name: conversion-webhook
-          path: /convert/v1/devices
+          path: /convert/v1beta1/devices
       conversionReviewVersions:
         - v1beta1
