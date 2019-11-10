@@ -112,7 +112,7 @@ func main() {
 	// register handlers
 	informer := thingsinformers.NewSharedInformerFactory(clientset, time.Minute*5)
 	mux := http.NewServeMux()
-	mux.Handle("/validate/v1/modules", http.HandlerFunc(admission.ModuleValidation(informer)))
+	mux.Handle("/validate/v1beta1/modules", http.HandlerFunc(admission.ModuleValidation(informer)))
 	informer.Start(stopCh)
 
 	informer.WaitForCacheSync(stopCh)
