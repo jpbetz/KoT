@@ -2,6 +2,5 @@ apiVersion: things.kubecon.io/v1alpha1
 kind: Device
 metadata:
   name: research-pressure
-  namespace: examples
 spec: {}
 status: {}

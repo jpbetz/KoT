@@ -2,7 +2,6 @@ apiVersion: things.kubecon.io/v1
 kind: Device
 metadata:
   name: switch-2
-  namespace: examples
 spec:
   inputs:
   - name: Switch

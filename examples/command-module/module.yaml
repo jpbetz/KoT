@@ -2,7 +2,6 @@ apiVersion: deepsea.kubecon.io/v1alpha1
 kind: Module
 metadata:
   name: command
-  namespace: examples
 spec:
   devices:
     pump: command-pump
