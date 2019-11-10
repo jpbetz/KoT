@@ -2,6 +2,7 @@ kind: ServiceAccount
 apiVersion: v1
 metadata:
   name: deepsea-controllers
+  namespace: deepsea
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -23,11 +24,13 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: deepsea-controllers
+    namespace: deepsea
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: controllers-deployment
+  namespace: deepsea
   labels:
     app: deepsea-controllers
 spec:
