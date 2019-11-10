@@ -2,6 +2,7 @@ kind: ServiceAccount
 apiVersion: v1
 metadata:
   name: deepsea-controllers
+  namespace: deepsea
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -23,11 +24,13 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: deepsea-controllers
+    namespace: deepsea
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: controllers-deployment
+  namespace: deepsea
   labels:
     app: deepsea-controllers
 spec:
@@ -43,6 +46,6 @@ spec:
       serviceAccountName: deepsea-controllers
       containers:
         - name: deapsea-controllers-container
-          image: gcr.io/jpbetz-public-images/deepsea-controllers:latest
+          image: docker.io/sttts/deepsea-controllers@sha256:f1182d0d522300f606c9c704b20c86d4ac5a2985b572756b8e11368bf2a81923
           command: ["/manager"]
           args: ["-simulator-addr", "http://$(DEEPSEA_SIMULATOR_SERVICE_PORT_80_TCP_ADDR):$(DEEPSEA_SIMULATOR_SERVICE_PORT_80_TCP_PORT)"]

@@ -30,6 +30,10 @@ push-admission:
 		docker push $(DOCKER_ORG)/deepsea-admission-webhook:latest
 		sed 's,image: .*$$,image: $(DOCKER_ORG)/deepsea-admission-webhook@'$$(docker inspect --format='{{index .RepoDigests 0}}' $(DOCKER_ORG)/deepsea-admission-webhook | cut -f2 -d@)',' admission/manifests.yaml > admission/manifests.yaml.updated && mv admission/manifests.yaml.updated admission/manifests.yaml
 
+push-controllers:
+		docker push $(DOCKER_ORG)/deepsea-controllers:latest
+		sed 's,image: .*$$,image: $(DOCKER_ORG)/deepsea-controllers@'$$(docker inspect --format='{{index .RepoDigests 0}}' $(DOCKER_ORG)/deepsea-controllers | cut -f2 -d@)',' controllers/manifests.yaml > controllers/manifests.yaml.updated && mv controllers/manifests.yaml.updated controllers/manifests.yaml
+
 push-simulator:
 		docker push $(DOCKER_ORG)/deepsea-simulator:latest
 		sed 's,image: .*$$,image: $(DOCKER_ORG)/deepsea-simulator@'$$(docker inspect --format='{{index .RepoDigests 0}}' $(DOCKER_ORG)/deepsea-simulator | cut -f2 -d@)',' simulator/manifests.yaml > simulator/manifests.yaml.updated && mv simulator/manifests.yaml.updated simulator/manifests.yaml

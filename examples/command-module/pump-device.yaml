@@ -2,7 +2,6 @@ apiVersion: things.kubecon.io/v1alpha1
 kind: Device
 metadata:
   name: command-pump
-  namespace: examples
 spec:
   inputs:
   - name: activeCount
