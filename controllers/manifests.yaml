@@ -46,6 +46,5 @@ spec:
       serviceAccountName: deepsea-controllers
       containers:
         - name: deapsea-controllers-container
-          image: docker.io/sttts/deepsea-controllers@sha256:f1182d0d522300f606c9c704b20c86d4ac5a2985b572756b8e11368bf2a81923
+          image: gcr.io/jpbetz-public-images/deepsea-controllers@sha256:3eaf79da316bcf0ca02c7ed391e37aa632a0868295734bb23a12beb231eca378
           command: ["/manager"]
-          args: ["-simulator-addr", "http://$(DEEPSEA_SIMULATOR_SERVICE_PORT_80_TCP_ADDR):$(DEEPSEA_SIMULATOR_SERVICE_PORT_80_TCP_PORT)"]

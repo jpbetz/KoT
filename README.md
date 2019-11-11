@@ -76,8 +76,8 @@ or by adding an ingress.
 ### Accessing Simulator UI - kube-proxy
 
 ```
-POD=kubectl -n default get pods -o name -l app=deepsea-simulator
-kubectl -n default port-forward "${POD}" 8080:8085
+export POD=$(kubectl -n deepsea get pods -o name -l app=deepsea-simulator)
+kubectl -n deepsea port-forward "${POD}" 8080:8085
 ```
 
 Navigate to http://localhost:8080 in a browser.

@@ -30,9 +30,7 @@ func init() {
 
 func main() {
 	var metricsAddr string
-	var simulatorAddr string
 	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
-	flag.StringVar(&simulatorAddr, "simulator-addr", ":8085", "The address of the device simulator service.")
 	flag.Parse()
 
 	ctrl.SetLogger(klogr.New())

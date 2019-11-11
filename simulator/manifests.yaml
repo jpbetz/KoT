@@ -63,6 +63,7 @@ spec:
       labels:
         app: deepsea-simulator
     spec:
+      serviceAccountName: deepsea-simulator
       containers:
         - name: deapsea-simulator-container
           image: gcr.io/jpbetz-public-images/deepsea-simulator:latest
