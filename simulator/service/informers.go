@@ -73,8 +73,6 @@ func (d *deviceHandler) OnUpdate(oldObj, newObj interface{}) {
 			d.onChangedValues(oldDevice.Status.Outputs, newDevice.Status.Outputs, func(output v1alpha1.Value) {
 				d.s.websockets.SendValueChanged(module+"."+newDevice.Name+"."+output.Name, output.Value)
 			})
-		} else {
-			klog.Warningf("did not find module owner reference for device: %s", newDevice.Name)
 		}
 	}
 }
@@ -90,8 +88,6 @@ func (d *deviceHandler) onChangedValues(oldValues, newValues []v1alpha1.Value, h
 			if !equality.Semantic.DeepEqual(oldValue, newValue) {
 				handler(newValue)
 			}
-		} else {
-			klog.Warningf("did not find matching old value when updating: %v", newValues)
 		}
 	}
 }
@@ -105,10 +101,6 @@ func (d *deviceHandler) OnDelete(obj interface{}) {
 }
 
 func findModule(d v1alpha1.Device) (string, bool) {
-	for _, ref := range d.OwnerReferences {
-		if ref.Kind == "Module" && ref.APIVersion == deepseav1alpha1.SchemeGroupVersion.String() {
-			return ref.Name, true
-		}
-	}
-	return "", false
+	moduleName, ok := d.Labels["module"]
+	return moduleName, ok
 }

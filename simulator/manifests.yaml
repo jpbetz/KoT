@@ -66,6 +66,6 @@ spec:
       serviceAccountName: deepsea-simulator
       containers:
         - name: deapsea-simulator-container
-          image: gcr.io/jpbetz-public-images/deepsea-simulator:latest
+          image: gcr.io/jpbetz-public-images/deepsea-simulator@sha256:b5dcc06c18b14f62e9c3ba31da6bfb440ef3536f357a1fe06f35f7f3d5c34aa5
           ports:
             - containerPort: 8085

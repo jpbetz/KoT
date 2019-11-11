@@ -62,11 +62,13 @@ class App extends React.Component {
 	}
 
 	onModulesChanged() {
-		console.log("module changed");
 		api.getDataset(this.onLoaded.bind(this));
 	}
 
 	onLoaded(data) {
+		if(data.devices == null || data.modules == null) {
+			return;
+		}
 		// Map the devices by name
 		let devices = data.devices.reduce(function(map, obj) {
 			map[obj.metadata.name] = obj;
@@ -88,9 +90,35 @@ class App extends React.Component {
 		let pressureMarks = [{value: 1, label: "1"}, {value: 10, label: "10"}, {value: 15, label: "15"}];
 		let pumpMarks = [{value: 0, label: "0"}, {value: 5, label: "5"}];
 
-		if (!this.state.modules || !this.state.devices) {
+		if (this.state.modules == null || this.state.modules.length < 1) {
 			return (
-					<div>Loading</div>
+					<div>
+						<Typography component="h1" variant="h2" align="center" color="textPrimary" gutterBottom>
+							Deep Sea Research Station
+						</Typography>
+						<Container maxWidth="md" component="main">
+							<Grid container alignItems="flex-end" spacing={5}>
+								<Grid item xs={12} sm={6} md={4}/>
+								<Grid item xs={12} sm={6} md={4}>
+									<Card>
+										<CardHeader
+												title="Station offline"
+												titleTypographyProps={{align: 'center'}}
+												className={classes.cardHeader}
+										/>
+										<CardContent>
+											<div className={classes.cardContent}>
+
+												<Typography variant="h6" color="textSecondary">
+													Create modules and their corresponding devices to get started.
+												</Typography>
+											</div>
+										</CardContent>
+									</Card>
+								</Grid>
+							</Grid>
+						</Container>
+					</div>
 			);
 		}
 

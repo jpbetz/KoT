@@ -2,6 +2,7 @@ apiVersion: things.kubecon.io/v1alpha1
 kind: Device
 metadata:
   name: research-pump
+  labels: {"module": "research"}
 spec:
   inputs:
   - name: activeCount

@@ -30,15 +30,6 @@ func ignoreNotFound(err error) error {
 	return err
 }
 
-func getObservedInput(device v1alpha1.Device, inputName string) (v1alpha1.Value, bool) {
-	for _, input := range device.Status.ObservedInputs {
-		if input.Name == inputName {
-			return input, true
-		}
-	}
-	return v1alpha1.Value{}, false
-}
-
 func getOutput(device v1alpha1.Device, outputName string) (*v1alpha1.Value, bool) {
 	for i, output := range device.Status.Outputs {
 		if output.Name == outputName {
@@ -57,7 +48,7 @@ func getInput(device v1alpha1.Device, inputName string) (*v1alpha1.Value, bool) 
 	return nil, false
 }
 
-func setInputValue(device v1alpha1.Device, inputName string, value resource.Quantity) bool {
+func setInput(device v1alpha1.Device, inputName string, value resource.Quantity) bool {
 	for i, input := range device.Spec.Inputs {
 		if input.Name == inputName {
 			device.Spec.Inputs[i].Value = value

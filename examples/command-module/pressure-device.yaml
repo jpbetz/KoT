@@ -2,5 +2,6 @@ apiVersion: things.kubecon.io/v1alpha1
 kind: Device
 metadata:
   name: command-pressure
+  labels: {"module": "command"}
 spec: {}
 status: {}

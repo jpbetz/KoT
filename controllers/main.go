@@ -43,22 +43,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	deviceReconciler := &DeviceReconciler{
+	deviceReconciler := &PressureController{
 		Client: mgr.GetClient(),
 		Log:    log,
 		Scheme: mgr.GetScheme(),
 	}
 	if err = deviceReconciler.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Captain")
-		os.Exit(1)
-	}
-
-	moduleReconciler := &ModuleReconciler{
-		Client: mgr.GetClient(),
-		Log:    log,
-		Scheme: mgr.GetScheme(),
-	}
-	if err = moduleReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Captain")
 		os.Exit(1)
 	}

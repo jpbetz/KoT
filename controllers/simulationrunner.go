@@ -19,6 +19,7 @@ package main
 import (
 	"context"
 	"math"
+	"math/rand"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -40,6 +41,11 @@ type SimulationRunner struct {
 // Start simulates pressure changes are a result of the number of pumps active and environmental effects
 func (s *SimulationRunner) Start(stopCh <-chan struct{}) error {
 	fn := func() {
+		select {
+		case <-stopCh:
+			return
+		default:
+		}
 		ctx := context.Background()
 		var list deepseav1alpha1.ModuleList
 		err := s.List(ctx, &list)
@@ -48,11 +54,6 @@ func (s *SimulationRunner) Start(stopCh <-chan struct{}) error {
 			return
 		}
 		for _, m := range list.Items {
-			select {
-			case <-stopCh:
-				return
-			default:
-			}
 			log := s.Log.WithValues("module", m.Name)
 
 			// Find both the pump and pressure device, and their inputs and outputs
@@ -105,7 +106,7 @@ func calculatePressureChange(pumpsActive int64) float64 {
 	// Use a wave to simulate environmental pressure changes.
 	freq := 1e-10 // ~1 minute period
 	amp := 200.0  // ~4 bars amplitude
-	n := time.Now().UnixNano()
+	n := time.Now().UnixNano() + int64(rand.Intn(1000) - 500)
 	simPressureChange := math.Sin(freq*float64(n)) * amp
 
 	// 2.5 pumps are required for equilibrium
