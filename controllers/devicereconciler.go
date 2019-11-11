@@ -6,22 +6,19 @@ import (
 	"math"
 
 	"github.com/go-logr/logr"
-	deepseav1alpha1 "github.com/jpbetz/KoT/apis/deepsea/v1alpha1"
-	"github.com/jpbetz/KoT/apis/things/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	simulatorclient "github.com/jpbetz/KoT/simulator/service/client"
+	deepseav1alpha1 "github.com/jpbetz/KoT/apis/deepsea/v1alpha1"
+	"github.com/jpbetz/KoT/apis/things/v1alpha1"
 )
 
 // DeviceReconciler reconciles a Device object
 type DeviceReconciler struct {
 	client.Client
-	SimulatorClient *simulatorclient.Client
-	Log logr.Logger
+	Log    logr.Logger
 	Scheme *runtime.Scheme
 }
 
@@ -38,22 +35,9 @@ func (r *DeviceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	// reconcile pressure by activating pumps as needed
-	if _, ok := getOutput(device, "pressure"); ok {
-		err := r.ReconcilePressure(device)
-		if err != nil {
-			log.Error(err, "Failed to reconcile pressure")
-		}
-	}
-
-	// reconcile device inputs
-	// if an observed input in status differs than the desired input in spec, update the device with
-	// the desired inputs
-	if !equality.Semantic.DeepEqual(device.Spec.Inputs, device.Status.ObservedInputs) {
-		// only sets spec field, which in this case, is the inputs
-		err := r.SimulatorClient.PutDevice(&device)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
+	err := r.ReconcilePressure(device)
+	if err != nil {
+		log.Error(err, "Failed to reconcile pressure")
 	}
 
 	return ctrl.Result{}, nil
@@ -76,6 +60,10 @@ func (r *DeviceReconciler) ReconcilePressure(pressureDevice v1alpha1.Device) err
 				return err
 			}
 
+			if m.Spec.Devices.PressureSensor != pressureDevice.Name {
+				continue
+			}
+
 			// find the pump device
 			var pumpDevice v1alpha1.Device
 			err = r.Get(ctx, types.NamespacedName{Namespace: m.Namespace, Name: m.Spec.Devices.Pump}, &pumpDevice)
@@ -92,7 +80,6 @@ func (r *DeviceReconciler) ReconcilePressure(pressureDevice v1alpha1.Device) err
 			if !ok {
 				return fmt.Errorf("unable to find pressure output")
 			}
-
 			// calculate how many pumps to activate
 			currentPressure := float64(pressure.Value.MilliValue()) / 1000
 			activePumps := calculateActivePumps(currentPressure)
@@ -113,7 +100,7 @@ func (r *DeviceReconciler) ReconcilePressure(pressureDevice v1alpha1.Device) err
 
 func calculateActivePumps(pressure float64) int64 {
 	// We have 5 pumps, and don't want the pressure to exceed 0.5 in either direction
-	count := 2.5 + (desiredPressure - pressure)*(2.5/0.5)
+	count := 2.5 + (desiredPressure-pressure)*(2.5/0.5)
 	count = math.Max(count, 0)
 	count = math.Min(count, 5)
 	count = math.Round(count)

@@ -8,6 +8,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/labels"
 
 	"github.com/jpbetz/KoT/simulator/service/types"
 )
@@ -28,9 +29,14 @@ func websocketHandler(s *server, w http.ResponseWriter, r *http.Request) {
 	func () {
 		s.mu.Lock()
 		defer s.mu.Unlock()
-		for _, device := range s.devices {
+		devices, err := s.deviceLister.List(labels.Everything())
+		if err != nil {
+			// TODO
+			return
+		}
+		for _, device := range devices {
 			for _, input := range device.Status.ObservedInputs {
-				if moduleName, ok := s.deviceModules[device.Name]; ok {
+				if moduleName, ok := findModule(*device); ok {
 					m := &types.EventMessage{
 						Type: "value",
 						Path:  moduleName + "." + device.Name + "." + input.Name,
@@ -45,7 +51,7 @@ func websocketHandler(s *server, w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			for _, output := range device.Status.Outputs {
-				if moduleName, ok := s.deviceModules[device.Name]; ok {
+				if moduleName, ok := findModule(*device); ok {
 					m := &types.EventMessage{
 						Type: "value",
 						Path:  moduleName + "." + device.Name + "." + output.Name,
@@ -131,7 +137,7 @@ func (h *WebsocketManager) SendModuleUpdated(moduleName string) {
 	h.broadcast <- msg
 }
 
-func (h *WebsocketManager) run() {
+func (h *WebsocketManager) run(stopCh <-chan struct{}) {
 	for {
 		select {
 		case client := <-h.register:
@@ -155,6 +161,8 @@ func (h *WebsocketManager) run() {
 					delete(h.clients, client)
 				}
 			}
+		case <-stopCh:
+			return
 		}
 	}
 }

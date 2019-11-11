@@ -2,20 +2,18 @@ package main
 
 import (
 	"flag"
-	"net/http"
 	"os"
 
-	deepseav1alpha1 "github.com/jpbetz/KoT/apis/deepsea/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/klog/klogr"
 	ctrl "sigs.k8s.io/controller-runtime"
+
+	deepseav1alpha1 "github.com/jpbetz/KoT/apis/deepsea/v1alpha1"
 	// +kubebuilder:scaffold:imports
 
 	"github.com/jpbetz/KoT/apis/things/v1alpha1"
-
-	"github.com/jpbetz/KoT/simulator/service/client"
 )
 
 var (
@@ -39,7 +37,6 @@ func main() {
 
 	ctrl.SetLogger(klogr.New())
 
-	simulatorClient := &client.Client{Url: simulatorAddr, Client: &http.Client{}}
 	log := ctrl.Log.WithName("controllers").WithName("Captain")
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{Scheme: scheme, MetricsBindAddress: metricsAddr})
@@ -51,7 +48,6 @@ func main() {
 	deviceReconciler := &DeviceReconciler{
 		Client: mgr.GetClient(),
 		Log:    log,
-		SimulatorClient: simulatorClient,
 		Scheme: mgr.GetScheme(),
 	}
 	if err = deviceReconciler.SetupWithManager(mgr); err != nil {
@@ -59,20 +55,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	deviceSynchronizer := &deviceSynchronizer{
-		Client: mgr.GetClient(),
-		Log:    log,
-		SimulatorClient: simulatorClient,
-	}
-	if err = mgr.Add(deviceSynchronizer); err != nil {
-		setupLog.Error(err, "unable to add sync status runnable", "controller", "Captain")
-		os.Exit(1)
-	}
-
 	moduleReconciler := &ModuleReconciler{
 		Client: mgr.GetClient(),
 		Log:    log,
-		SimulatorClient: simulatorClient,
 		Scheme: mgr.GetScheme(),
 	}
 	if err = moduleReconciler.SetupWithManager(mgr); err != nil {
@@ -80,20 +65,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	moduleSynchronizer := &moduleSynchronizer{
-		Client: mgr.GetClient(),
-		Log:    log,
-		SimulatorClient: simulatorClient,
-	}
-	if err = mgr.Add(moduleSynchronizer); err != nil {
-		setupLog.Error(err, "unable to add sync status runnable", "controller", "Captain")
-		os.Exit(1)
-	}
-
 	simulation := &SimulationRunner{
 		Client: mgr.GetClient(),
 		Log:    log,
-		SimulatorClient: simulatorClient,
 	}
 	if err = mgr.Add(simulation); err != nil {
 		setupLog.Error(err, "unable to add simulation runnable", "controller", "Captain")

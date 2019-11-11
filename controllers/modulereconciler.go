@@ -20,8 +20,6 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	deepseav1alpha1 "github.com/jpbetz/KoT/apis/deepsea/v1alpha1"
-	"github.com/jpbetz/KoT/apis/things/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -29,14 +27,14 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	simulatorclient "github.com/jpbetz/KoT/simulator/service/client"
+	deepseav1alpha1 "github.com/jpbetz/KoT/apis/deepsea/v1alpha1"
+	"github.com/jpbetz/KoT/apis/things/v1alpha1"
 )
 
 // ModuleReconciler reconciles a Module object
 type ModuleReconciler struct {
 	client.Client
-	SimulatorClient *simulatorclient.Client
-	Log logr.Logger
+	Log    logr.Logger
 	Scheme *runtime.Scheme
 }
 

@@ -22,20 +22,18 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/jpbetz/KoT/apis/things/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	deepseav1alpha1 "github.com/jpbetz/KoT/apis/deepsea/v1alpha1"
+	"github.com/jpbetz/KoT/apis/things/v1alpha1"
 
-	simulatorclient "github.com/jpbetz/KoT/simulator/service/client"
+	deepseav1alpha1 "github.com/jpbetz/KoT/apis/deepsea/v1alpha1"
 )
 
 type SimulationRunner struct {
 	client.Client
-	SimulatorClient *simulatorclient.Client
 	Log logr.Logger
 }
 
@@ -46,7 +44,7 @@ func (s *SimulationRunner) Start(stopCh <-chan struct{}) error {
 		var list deepseav1alpha1.ModuleList
 		err := s.List(ctx, &list)
 		if err != nil {
-			s.Log.Error(err,"failed to list devices")
+			s.Log.Error(err, "failed to list devices")
 			return
 		}
 		for _, m := range list.Items {
@@ -72,29 +70,32 @@ func (s *SimulationRunner) Start(stopCh <-chan struct{}) error {
 			var pressureDevice v1alpha1.Device
 			err = s.Get(ctx, types.NamespacedName{Namespace: m.Namespace, Name: m.Spec.Devices.PressureSensor}, &pressureDevice)
 			if err != nil {
-				log.Error(err, "Failed to get pressure devices")
-				return
-			}
-			pressure, ok := getOutput(pressureDevice, "pressure")
-			if !ok {
-				log.Error(err, "Failed to find pressure output")
+				log.Error(err, "Failed to get pressure device")
 				return
 			}
 
 			change := calculatePressureChange(pump.Value.Value())
 
+			var quantity *resource.Quantity
+			if pressure, ok := getOutput(pressureDevice, "pressure"); ok {
+				quantity = &pressure.Value
+			} else {
+				quantity = resource.NewQuantity(10, resource.DecimalSI)
+				value := v1alpha1.Value{Name: "pressure", Type: v1alpha1.FloatType}
+				pressureDevice.Status.Outputs = append(pressureDevice.Status.Outputs, value)
+			}
 			changeQuantity := resource.NewMilliQuantity(int64(change), resource.DecimalExponent)
-			pressure.Value.Add(*changeQuantity)
+			quantity.Add(*changeQuantity)
 
 			// Write simulated pressure to device
-			err = s.SimulatorClient.PutOutput(pressureDevice.Name, pressure.Name, &pressure)
+			err = s.Client.Update(ctx, &pressureDevice)
 			if err != nil {
-				log.Error(err, "Failed to update device input for simulation")
-				continue
+				log.Error(err, "Failed to update pressure device")
+				return
 			}
 		}
 	}
-	wait.Until(fn, time.Millisecond * 500, stopCh)
+	wait.Until(fn, time.Millisecond*500, stopCh)
 	return nil
 }
 

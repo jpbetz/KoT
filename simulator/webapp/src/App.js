@@ -48,24 +48,39 @@ class App extends React.Component {
 	constructor(props) {
 		super(props);
 		this.state = {sensor: {value: 0}};
-		this.path = this.props.path
+		this.path = this.props.path;
+		this.moduleChangeHandler = this.onModulesChanged.bind(this)
 	}
 
 	componentDidMount() {
-		api.getDataset(this.onLoaded.bind(this));
-		api.addOnModuleChangedListener(this.onModulesChanged.bind(this));
+		this.onModulesChanged();
+		api.addOnModuleChangedListener(this.moduleChangeHandler);
 	}
 
 	componentWillUnmount() {
-		api.removeOnModuleChangedListener(this.onModulesChanged.bind(this));
+		api.removeOnModuleChangedListener(this.moduleChangeHandler);
 	}
 
 	onModulesChanged() {
+		console.log("module changed");
 		api.getDataset(this.onLoaded.bind(this));
 	}
 
 	onLoaded(data) {
-		this.setState({modules: data.modules, devices: data.devices});
+		// Map the devices by name
+		let devices = data.devices.reduce(function(map, obj) {
+			map[obj.metadata.name] = obj;
+			return map;
+		}, {});
+
+		// Only include modules where we have all the required devices
+		let modules = data.modules.filter(function(module) {
+			return module.spec.devices.waterAlarm in devices &&
+					module.spec.devices.pressureSensor in devices &&
+					module.spec.devices.pump in devices;
+		});
+
+		this.setState({modules: modules, devices: devices});
 	}
 
 	render() {
@@ -73,7 +88,7 @@ class App extends React.Component {
 		let pressureMarks = [{value: 1, label: "1"}, {value: 10, label: "10"}, {value: 15, label: "15"}];
 		let pumpMarks = [{value: 0, label: "0"}, {value: 5, label: "5"}];
 
-		if (!this.state.modules) {
+		if (!this.state.modules || !this.state.devices) {
 			return (
 					<div>Loading</div>
 			);

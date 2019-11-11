@@ -6,15 +6,16 @@ class SensorSwitch extends React.Component {
     constructor(props) {
       super(props);
       this.state = {sensor: {value: 0}};
-      this.path = this.props.path
+      this.path = this.props.path;
+      this.onChangedHandler = this.onValueChanged.bind(this);
     }
     
     componentDidMount() {
-	    api.addOnUpdatedListener(this.path, this.onValueChanged.bind(this));
+	    api.addOnUpdatedListener(this.path, this.onChangedHandler);
     }
 
     componentWillUnmount() {
-	    api.removeOnUpdatedListener(this.path, this.onValueChanged.bind(this));
+	    api.removeOnUpdatedListener(this.path, this.onChangedHandler);
     }
 
     onValueChanged(v) {

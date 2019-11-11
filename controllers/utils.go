@@ -17,9 +17,10 @@ limitations under the License.
 package main
 
 import (
-	"github.com/jpbetz/KoT/apis/things/v1alpha1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
+
+	"github.com/jpbetz/KoT/apis/things/v1alpha1"
 )
 
 func ignoreNotFound(err error) error {
@@ -38,22 +39,22 @@ func getObservedInput(device v1alpha1.Device, inputName string) (v1alpha1.Value,
 	return v1alpha1.Value{}, false
 }
 
-func getOutput(device v1alpha1.Device, outputName string) (v1alpha1.Value, bool) {
-	for _, output := range device.Status.Outputs {
+func getOutput(device v1alpha1.Device, outputName string) (*v1alpha1.Value, bool) {
+	for i, output := range device.Status.Outputs {
 		if output.Name == outputName {
-			return output, true
+			return &device.Status.Outputs[i], true
 		}
 	}
-	return v1alpha1.Value{}, false
+	return nil, false
 }
 
-func getInput(device v1alpha1.Device, inputName string) (v1alpha1.Value, bool) {
-	for _, input := range device.Spec.Inputs {
+func getInput(device v1alpha1.Device, inputName string) (*v1alpha1.Value, bool) {
+	for i, input := range device.Spec.Inputs {
 		if input.Name == inputName {
-			return input, true
+			return &device.Spec.Inputs[i], true
 		}
 	}
-	return v1alpha1.Value{}, false
+	return nil, false
 }
 
 func setInputValue(device v1alpha1.Device, inputName string, value resource.Quantity) bool {

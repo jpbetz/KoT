@@ -41,7 +41,7 @@ export function removeOnModuleChangedListener(handler) {
 
 rws.addEventListener('message', event => {
 		let lines = event.data.split("\n");
-    for(let i = 0; i < lines.length; i++) {
+		for(let i = 0; i < lines.length; i++) {
 			let line = lines[i];
 			let msg = JSON.parse(line);
 			switch(msg.type) {
