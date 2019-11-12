@@ -1,7 +1,7 @@
 apiVersion: things.kubecon.io/v1alpha1
 kind: Device
 metadata:
-  name: command-water
+  name: command-alarm
   labels: {"module": "command"}
 spec: {}
 status: {}

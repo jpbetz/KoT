@@ -5,6 +5,6 @@ metadata:
 spec:
   devices:
     pump: command-pump
-    waterAlarm: command-water
+    waterAlarm: command-alarm
     pressureSensor: command-pressure
 status: {}

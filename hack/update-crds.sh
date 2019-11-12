@@ -25,4 +25,5 @@ CONTROLLER_GEN=${CONTROLLER_GEN_BASENAME}-${VERSION}
 test -x "hack/${CONTROLLER_GEN}" || curl -f -L -o "hack/${CONTROLLER_GEN}" "https://github.com/openshift/kubernetes-sigs-controller-tools/releases/download/${VERSION}/${CONTROLLER_GEN_BASENAME}"
 chmod +x "hack/${CONTROLLER_GEN}"
 
-hack/${CONTROLLER_GEN} schemapatch:manifests=./manifests paths="./apis/..." output:dir=./manifests
+hack/${CONTROLLER_GEN} schemapatch:manifests=./manifests/kubernetes-1.15-crds paths="./apis/..." output:dir=./manifests/kubernetes-1.15-crds
+hack/${CONTROLLER_GEN} schemapatch:manifests=./manifests/kubernetes-1.16-crds paths="./apis/..." output:dir=./manifests/kubernetes-1.16-crds

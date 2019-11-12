@@ -172,7 +172,7 @@ class App extends React.Component {
 														</p>
 														<p>
 															Pumps
-															<Slider min={0} max={5} marks={pumpMarks} input path={module.metadata.name + "." + this.state.devices[module.spec.devices.pump].metadata.name + ".activeCount"}/>
+															<Slider min={0} max={6} marks={pumpMarks} input path={module.metadata.name + "." + this.state.devices[module.spec.devices.pump].metadata.name + ".activeCount"}/>
 														</p>
 														<p>
 															Alarm

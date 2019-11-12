@@ -1,7 +1,7 @@
 apiVersion: things.kubecon.io/v1alpha1
 kind: Device
 metadata:
-  name: research-water
+  name: research-alarm
   labels: {"module": "research"}
 spec: {}
 status: {}

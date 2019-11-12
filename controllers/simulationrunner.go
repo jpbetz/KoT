@@ -112,7 +112,7 @@ func calculatePressureChange(pumpsActive int64) float64 {
 	// 2.5 pumps are required for equilibrium
 	// calculate pressure change if pumps are not at equilibrium
 	pumpVal := float64(pumpsActive)
-	pumpPressureChange := (pumpVal - 2.5) * 100
+	pumpPressureChange := (pumpVal - 3.0) * 100
 
 	return simPressureChange + pumpPressureChange
 }

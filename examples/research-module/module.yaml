@@ -5,6 +5,6 @@ metadata:
 spec:
   devices:
     pump: research-pump
-    waterAlarm: research-water
+    waterAlarm: research-alarm
     pressureSensor: research-pressure
 status: {}
