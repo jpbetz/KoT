@@ -108,15 +108,15 @@ spec:
     served: true
     storage: true
     additionalPrinterColumns:
-      - name: Pressure
-        type: string
-        jsonPath: .status.outputs[?(@.name=='pressure')].value
-      - name: Pumps
-        type: string
-        jsonPath: .spec.inputs[?(@.name=='activeCount')].value
-      - name: Alarm
-        type: string
-        jsonPath: .status.outputs[?(@.name=='alarm')].value
+    - name: Pressure
+      type: string
+      jsonPath: .status.outputs[?(@.name=='pressure')].value
+    - name: Pumps
+      type: string
+      jsonPath: .spec.inputs[?(@.name=='activeCount')].value
+    - name: Alarm
+      type: string
+      jsonPath: .status.outputs[?(@.name=='alarm')].value
     "schema":
       "openAPIV3Schema":
         description: Device is a specification for a device in a deep see station.
@@ -155,7 +155,6 @@ spec:
                       type: string
                     type:
                       type: string
-                      default: Float
                       enum:
                       - Integer
                       - Float
@@ -182,7 +181,6 @@ spec:
                       type: string
                     type:
                       type: string
-                      default: Float
                       enum:
                       - Integer
                       - Float
@@ -205,7 +203,6 @@ spec:
                       type: string
                     type:
                       type: string
-                      default: Float
                       enum:
                       - Integer
                       - Float
@@ -227,5 +224,5 @@ spec:
           name: conversion-webhook
           path: /convert/v1beta1/devices
       conversionReviewVersions:
-        - v1beta1
+      - v1beta1
   scope: Namespaced

@@ -9,9 +9,198 @@ spec:
   - name: v1alpha1
     served: true
     storage: true
+    "schema":
+      "openAPIV3Schema":
+        description: Device is a specification for a device in a deep see station.
+          It can be a sensor (if it only has outputs), or an actor (if it only has
+          inputs), or both.
+        type: object
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: DeviceSpec is the spec for a Sensor resource
+            type: object
+            properties:
+              inputs:
+                description: inputs are the desired value for an actor.
+                type: array
+                items:
+                  description: Value is a named and typed value.
+                  type: object
+                  required:
+                  - name
+                  - value
+                  properties:
+                    name:
+                      description: name is the name of this input value.
+                      type: string
+                    type:
+                      type: string
+                      enum:
+                      - Integer
+                      - Float
+                      - Boolean
+                    value:
+                      description: value is the floating point input value.
+                      type: string
+          status:
+            description: DeviceStatus is the status for a Sensor resource
+            type: object
+            properties:
+              observedInputs:
+                description: observedInputs are the inputs the device observed.
+                type: array
+                items:
+                  description: Value is a named and typed value.
+                  type: object
+                  required:
+                  - name
+                  - value
+                  properties:
+                    name:
+                      description: name is the name of this input value.
+                      type: string
+                    type:
+                      type: string
+                      enum:
+                      - Integer
+                      - Float
+                      - Boolean
+                    value:
+                      description: value is the floating point input value.
+                      type: string
+              outputs:
+                description: outputs are values of a sensor.
+                type: array
+                items:
+                  description: Value is a named and typed value.
+                  type: object
+                  required:
+                  - name
+                  - value
+                  properties:
+                    name:
+                      description: name is the name of this input value.
+                      type: string
+                    type:
+                      type: string
+                      enum:
+                      - Integer
+                      - Float
+                      - Boolean
+                    value:
+                      description: value is the floating point input value.
+                      type: string
   - name: v1
     served: true
     storage: false
+    "schema":
+      "openAPIV3Schema":
+        description: Device is a specification for a device in a deep see station.
+          It can be a sensor (if it only has outputs), or an actor (if it only has
+          inputs), or both.
+        type: object
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: DeviceSpec is the spec for a Sensor resource
+            type: object
+            properties:
+              inputs:
+                description: inputs are the desired value for an actor.
+                type: array
+                items:
+                  description: Value is named and typed value. Only one of float,
+                    boolean or integer can be set.
+                  type: object
+                  required:
+                  - name
+                  properties:
+                    boolean:
+                      description: boolean is a true or false value.
+                      type: boolean
+                    float:
+                      description: float is a floating point input value.
+                      type: string
+                    integer:
+                      description: integer is a integer value.
+                      type: integer
+                      format: int32
+                    name:
+                      description: name is the name of this input value.
+                      type: string
+          status:
+            description: DeviceStatus is the status for a Sensor resource
+            type: object
+            properties:
+              observedInputs:
+                description: observedInputs are the inputs the device observed.
+                type: array
+                items:
+                  description: Value is named and typed value. Only one of float,
+                    boolean or integer can be set.
+                  type: object
+                  required:
+                  - name
+                  properties:
+                    boolean:
+                      description: boolean is a true or false value.
+                      type: boolean
+                    float:
+                      description: float is a floating point input value.
+                      type: string
+                    integer:
+                      description: integer is a integer value.
+                      type: integer
+                      format: int32
+                    name:
+                      description: name is the name of this input value.
+                      type: string
+              outputs:
+                description: outputs are values of a sensor.
+                type: array
+                items:
+                  description: Value is named and typed value. Only one of float,
+                    boolean or integer can be set.
+                  type: object
+                  required:
+                  - name
+                  properties:
+                    boolean:
+                      description: boolean is a true or false value.
+                      type: boolean
+                    float:
+                      description: float is a floating point input value.
+                      type: string
+                    integer:
+                      description: integer is a integer value.
+                      type: integer
+                      format: int32
+                    name:
+                      description: name is the name of this input value.
+                      type: string
   names:
     kind: Device
     plural: devices
@@ -26,120 +215,12 @@ spec:
         name: conversion-webhook
         path: /convert/v1beta1/devices
   additionalPrinterColumns:
-    - name: Pressure
-      type: string
-      JSONPath: .status.outputs[?(@.name=='pressure')].value
-    - name: Pumps
-      type: string
-      JSONPath: .spec.inputs[?(@.name=='activeCount')].value
-    - name: Alarm
-      type: string
-      JSONPath: .status.outputs[?(@.name=='alarm')].value
-  validation:
-    "openAPIV3Schema":
-      description: Device is a specification for a device in a deep see station.
-        It can be a sensor (if it only has outputs), or an actor (if it only has
-        inputs), or both.
-      type: object
-      properties:
-        apiVersion:
-          description: 'APIVersion defines the versioned schema of this representation
-                of an object. Servers should convert recognized schemas to the latest
-                internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-          type: string
-        kind:
-          description: 'Kind is a string value representing the REST resource this
-                object represents. Servers may infer this from the endpoint the client
-                submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-          type: string
-        metadata:
-          type: object
-        spec:
-          description: DeviceSpec is the spec for a Sensor resource
-          type: object
-          properties:
-            inputs:
-              description: inputs are the desired value for an actor.
-              type: array
-              items:
-                description: Value is a named and typed value.
-                type: object
-                required:
-                  - name
-                properties:
-                  name:
-                    description: name is the name of this input value.
-                    type: string
-                  type:
-                    type: string
-                  value:
-                    description: value is the floating point input value.
-                    type: string
-                  boolean:
-                    description: boolean is a true or false value.
-                    type: boolean
-                  float:
-                    description: float is a floating point input value.
-                    type: string
-                  integer:
-                    description: integer is a integer value.
-                    type: integer
-                    format: int32
-        status:
-          description: DeviceStatus is the status for a Sensor resource
-          type: object
-          properties:
-            observedInputs:
-              description: inputs are the desired value for an actor.
-              type: array
-              items:
-                description: Value is a named and typed value.
-                type: object
-                required:
-                  - name
-                properties:
-                  name:
-                    description: name is the name of this input value.
-                    type: string
-                  type:
-                    type: string
-                  value:
-                    description: value is the floating point input value.
-                    type: string
-                  boolean:
-                    description: boolean is a true or false value.
-                    type: boolean
-                  float:
-                    description: float is a floating point input value.
-                    type: string
-                  integer:
-                    description: integer is a integer value.
-                    type: integer
-                    format: int32
-            outputs:
-              description: outputs are values of a sensor.
-              type: array
-              items:
-                description: Value is a named and typed value.
-                type: object
-                required:
-                  - name
-                properties:
-                  name:
-                    description: name is the name of this input value.
-                    type: string
-                  type:
-                    type: string
-                  value:
-                    description: value is the floating point input value.
-                    type: string
-                  boolean:
-                    description: boolean is a true or false value.
-                    type: boolean
-                  float:
-                    description: float is a floating point input value.
-                    type: string
-                  integer:
-                    description: integer is a integer value.
-                    type: integer
-                    format: int32
+  - name: Pressure
+    type: string
+    JSONPath: .status.outputs[?(@.name=='pressure')].value
+  - name: Pumps
+    type: string
+    JSONPath: .spec.inputs[?(@.name=='activeCount')].value
+  - name: Alarm
+    type: string
+    JSONPath: .status.outputs[?(@.name=='alarm')].value

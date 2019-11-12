@@ -40,7 +40,6 @@ type Value struct {
 	// value is the floating point input value.
 	// +kubebuilder:validation:Required
 	Value resource.Quantity `json:"value"`
-	// +kubebuilder:default=Float
 	// +kubebuilder:validation:Enum={"Integer","Float","Boolean"}
 	Type Type `json:"type"`
 }
