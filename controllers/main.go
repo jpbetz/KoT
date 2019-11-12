@@ -11,6 +11,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	deepseav1alpha1 "github.com/jpbetz/KoT/apis/deepsea/v1alpha1"
+	v1 "github.com/jpbetz/KoT/apis/things/v1"
+
 	// +kubebuilder:scaffold:imports
 
 	"github.com/jpbetz/KoT/apis/things/v1alpha1"
@@ -24,6 +26,7 @@ var (
 func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = v1alpha1.AddToScheme(scheme)
+	_ = v1.AddToScheme(scheme)
 	_ = deepseav1alpha1.AddToScheme(scheme)
 	// +kubebuilder:scaffold:scheme
 }

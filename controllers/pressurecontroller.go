@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"math"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -34,7 +35,7 @@ func (r *PressureController) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, ignoreNotFound(err)
 	}
 
-	if _, ok := getOutputV1(device, "pressure"); ok {
+	if _, ok := getOutputV1(&device, "pressure"); ok {
 		// reconcile pressure by activating pumps as needed
 		err := r.ReconcilePressure(device)
 		if err != nil {
@@ -63,11 +64,11 @@ func (r *PressureController) ReconcilePressure(pressureDevice v1.Device) error {
 		}
 
 		// find the inputs and outputs we need to reconcile pressure by activating pumps
-		pump, ok := getInputV1(pumpDevice, "activeCount")
+		pump, ok := getInputV1(&pumpDevice, "activeCount")
 		if !ok {
 			return fmt.Errorf("unable to find pump input: %s", pumpDevice.Name)
 		}
-		pressure, ok := getOutputV1(pressureDevice, "pressure")
+		pressure, ok := getOutputV1(&pressureDevice, "pressure")
 		if !ok {
 			return fmt.Errorf("unable to find pressure output")
 		}
@@ -76,7 +77,7 @@ func (r *PressureController) ReconcilePressure(pressureDevice v1.Device) error {
 		currentPressure := float64(pressure.Float.MilliValue()) / 1000
 		activePumps := calculateActivePumps(currentPressure)
 		if activePumps != nil {
-			pump.Float.Set(*activePumps)
+			pump.Integer = activePumps
 			err = r.Update(ctx, &pumpDevice)
 			if err != nil {
 				return err
@@ -86,8 +87,13 @@ func (r *PressureController) ReconcilePressure(pressureDevice v1.Device) error {
 	return nil
 }
 
-func calculateActivePumps(pressure float64) *int64 {
-	result := int64(3)
+func calculateActivePumps(pressure float64) *int32 {
+	// We have 5 pumps, and don't want the pressure to exceed 0.5 in either direction
+	count := 2.5 + (10.0-pressure)*(2.5/0.5)
+	count = math.Max(count, 0)
+	count = math.Min(count, 5)
+	count = math.Round(count)
+	result := int32(count)
 	return &result
 }
 

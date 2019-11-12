@@ -63,7 +63,7 @@ func (s *SimulationRunner) Start(stopCh <-chan struct{}) error {
 				log.Error(err, "Failed to get pump device for module")
 				return
 			}
-			pump, ok := getInput(pumpDevice, "activeCount")
+			pump, ok := getInput(&pumpDevice, "activeCount")
 			if !ok {
 				log.Error(err, "Failed to find pump input")
 				return
@@ -78,7 +78,7 @@ func (s *SimulationRunner) Start(stopCh <-chan struct{}) error {
 			change := calculatePressureChange(pump.Value.Value())
 
 			var pressure *v1alpha1.Value
-			pressure, ok = getOutput(pressureDevice, "pressure")
+			pressure, ok = getOutput(&pressureDevice, "pressure")
 			if !ok {
 				value := resource.NewQuantity(10, resource.DecimalSI)
 				pressure = &v1alpha1.Value{Name: "pressure", Value: *value}

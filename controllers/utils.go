@@ -30,7 +30,7 @@ func ignoreNotFound(err error) error {
 	return err
 }
 
-func getOutput(device v1alpha1.Device, outputName string) (*v1alpha1.Value, bool) {
+func getOutput(device *v1alpha1.Device, outputName string) (*v1alpha1.Value, bool) {
 	for i, output := range device.Status.Outputs {
 		if output.Name == outputName {
 			return &device.Status.Outputs[i], true
@@ -39,7 +39,7 @@ func getOutput(device v1alpha1.Device, outputName string) (*v1alpha1.Value, bool
 	return nil, false
 }
 
-func getInput(device v1alpha1.Device, inputName string) (*v1alpha1.Value, bool) {
+func getInput(device *v1alpha1.Device, inputName string) (*v1alpha1.Value, bool) {
 	for i, input := range device.Spec.Inputs {
 		if input.Name == inputName {
 			return &device.Spec.Inputs[i], true
@@ -48,7 +48,7 @@ func getInput(device v1alpha1.Device, inputName string) (*v1alpha1.Value, bool) 
 	return nil, false
 }
 
-func getOutputV1(device v1.Device, outputName string) (*v1.Value, bool) {
+func getOutputV1(device *v1.Device, outputName string) (*v1.Value, bool) {
 	for i, output := range device.Status.Outputs {
 		if output.Name == outputName {
 			return &device.Status.Outputs[i], true
@@ -57,7 +57,7 @@ func getOutputV1(device v1.Device, outputName string) (*v1.Value, bool) {
 	return nil, false
 }
 
-func getInputV1(device v1.Device, inputName string) (*v1.Value, bool) {
+func getInputV1(device *v1.Device, inputName string) (*v1.Value, bool) {
 	for i, input := range device.Spec.Inputs {
 		if input.Name == inputName {
 			return &device.Spec.Inputs[i], true
