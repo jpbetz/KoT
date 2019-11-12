@@ -67,9 +67,6 @@ func (d *deviceHandler) OnUpdate(oldObj, newObj interface{}) {
 				}
 				d.s.websockets.SendValueChanged(module+"."+newDevice.Name+"."+input.Name, input.Value)
 			})
-			d.onChangedValues(oldDevice.Status.ObservedInputs, newDevice.Status.ObservedInputs, func(input v1alpha1.Value) {
-				d.s.websockets.SendValueChanged(module+"."+newDevice.Name+"."+input.Name, input.Value)
-			})
 			d.onChangedValues(oldDevice.Status.Outputs, newDevice.Status.Outputs, func(output v1alpha1.Value) {
 				d.s.websockets.SendValueChanged(module+"."+newDevice.Name+"."+output.Name, output.Value)
 			})

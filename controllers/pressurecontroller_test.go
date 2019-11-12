@@ -24,8 +24,8 @@ import (
 func TestCalculateActivePumps(t *testing.T) {
 	cases := []struct {
 		pressure float64
-		minPumpCount int64
-		maxPumpCount int64
+		minPumpCount int32
+		maxPumpCount int32
 	} {
 		{ pressure: 11.0, minPumpCount: 0, maxPumpCount: 2},
 		{ pressure: 9.0, minPumpCount: 4, maxPumpCount: 6},

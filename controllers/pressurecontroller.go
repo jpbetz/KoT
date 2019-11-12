@@ -89,9 +89,9 @@ func (r *PressureController) ReconcilePressure(pressureDevice v1.Device) error {
 
 func calculateActivePumps(pressure float64) *int32 {
 	// We have 5 pumps, and don't want the pressure to exceed 0.5 in either direction
-	count := 2.5 + (10.0-pressure)*(2.5/0.5)
+	count := 3 + (10.0-pressure)*(3/0.5)
 	count = math.Max(count, 0)
-	count = math.Min(count, 5)
+	count = math.Min(count, 6)
 	count = math.Round(count)
 	result := int32(count)
 	return &result
