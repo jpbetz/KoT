@@ -11,6 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	deepseav1alpha1 "github.com/jpbetz/KoT/apis/deepsea/v1alpha1"
+	v1 "github.com/jpbetz/KoT/apis/things/v1"
 	"github.com/jpbetz/KoT/apis/things/v1alpha1"
 )
 
@@ -27,26 +28,23 @@ func (r *PressureController) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	log := r.Log.WithValues("device", req.NamespacedName)
 
-	var device v1alpha1.Device
+	var device v1.Device
 	if err := r.Get(ctx, req.NamespacedName, &device); err != nil {
 		log.Error(err, "Failed to fetch Device")
 		return ctrl.Result{}, ignoreNotFound(err)
 	}
 
-	if _, ok := getOutput(device, "pressure"); ok {
+	if _, ok := getOutputV1(device, "pressure"); ok {
 		// reconcile pressure by activating pumps as needed
 		err := r.ReconcilePressure(device)
 		if err != nil {
 			log.Error(err, "Failed to reconcile pressure")
 		}
 	}
-
 	return ctrl.Result{}, nil
 }
 
-const desiredPressure = 10.0
-
-func (r *PressureController) ReconcilePressure(pressureDevice v1alpha1.Device) error {
+func (r *PressureController) ReconcilePressure(pressureDevice v1.Device) error {
 	ctx := context.Background()
 
 	// find the module this device belongs to, so we can find the pumps device
@@ -58,32 +56,27 @@ func (r *PressureController) ReconcilePressure(pressureDevice v1alpha1.Device) e
 		}
 
 		// find the pump device
-		var pumpDevice v1alpha1.Device
+		var pumpDevice v1.Device
 		err = r.Get(ctx, types.NamespacedName{Namespace: m.Namespace, Name: m.Spec.Devices.Pump}, &pumpDevice)
 		if err != nil {
 			return err
 		}
 
 		// find the inputs and outputs we need to reconcile pressure by activating pumps
-		pump, ok := getInput(pumpDevice, "activeCount")
+		pump, ok := getInputV1(pumpDevice, "activeCount")
 		if !ok {
 			return fmt.Errorf("unable to find pump input: %s", pumpDevice.Name)
 		}
-		pressure, ok := getOutput(pressureDevice, "pressure")
+		pressure, ok := getOutputV1(pressureDevice, "pressure")
 		if !ok {
 			return fmt.Errorf("unable to find pressure output")
 		}
 
 		// calculate how many pumps to activate
-		currentPressure := float64(pressure.Value.MilliValue()) / 1000
+		currentPressure := float64(pressure.Float.MilliValue()) / 1000
 		activePumps := calculateActivePumps(currentPressure)
 		if activePumps != nil {
-			pump.Value.Set(*activePumps)
-
-			// activate the pumps
-			if !setInput(pumpDevice, pump.Name, pump.Value) {
-				return fmt.Errorf("unable to find pump input: %s", pumpDevice.Name)
-			}
+			pump.Float.Set(*activePumps)
 			err = r.Update(ctx, &pumpDevice)
 			if err != nil {
 				return err
@@ -94,8 +87,8 @@ func (r *PressureController) ReconcilePressure(pressureDevice v1alpha1.Device) e
 }
 
 func calculateActivePumps(pressure float64) *int64 {
-	// TODO: implement
-	return nil
+	result := int64(3)
+	return &result
 }
 
 func (r *PressureController) SetupWithManager(mgr ctrl.Manager) error {

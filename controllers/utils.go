@@ -18,8 +18,8 @@ package main
 
 import (
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/resource"
 
+	v1 "github.com/jpbetz/KoT/apis/things/v1"
 	"github.com/jpbetz/KoT/apis/things/v1alpha1"
 )
 
@@ -48,12 +48,20 @@ func getInput(device v1alpha1.Device, inputName string) (*v1alpha1.Value, bool) 
 	return nil, false
 }
 
-func setInput(device v1alpha1.Device, inputName string, value resource.Quantity) bool {
-	for i, input := range device.Spec.Inputs {
-		if input.Name == inputName {
-			device.Spec.Inputs[i].Value = value
-			return true
+func getOutputV1(device v1.Device, outputName string) (*v1.Value, bool) {
+	for i, output := range device.Status.Outputs {
+		if output.Name == outputName {
+			return &device.Status.Outputs[i], true
 		}
 	}
-	return false
+	return nil, false
+}
+
+func getInputV1(device v1.Device, inputName string) (*v1.Value, bool) {
+	for i, input := range device.Spec.Inputs {
+		if input.Name == inputName {
+			return &device.Spec.Inputs[i], true
+		}
+	}
+	return nil, false
 }

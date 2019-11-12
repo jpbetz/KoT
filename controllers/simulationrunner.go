@@ -77,14 +77,15 @@ func (s *SimulationRunner) Start(stopCh <-chan struct{}) error {
 
 			change := calculatePressureChange(pump.Value.Value())
 
-			var quantity *resource.Quantity
-			if pressure, ok := getOutput(pressureDevice, "pressure"); ok {
-				quantity = &pressure.Value
-			} else {
-				quantity = resource.NewQuantity(10, resource.DecimalSI)
-				value := v1alpha1.Value{Name: "pressure", Type: v1alpha1.FloatType}
-				pressureDevice.Status.Outputs = append(pressureDevice.Status.Outputs, value)
+			var pressure *v1alpha1.Value
+			pressure, ok = getOutput(pressureDevice, "pressure")
+			if !ok {
+				value := resource.NewQuantity(10, resource.DecimalSI)
+				pressure = &v1alpha1.Value{Name: "pressure", Value: *value}
+				pressureDevice.Status.Outputs = append(pressureDevice.Status.Outputs, *pressure)
 			}
+			pressure.Type = v1alpha1.FloatType
+			quantity := &pressure.Value
 			changeQuantity := resource.NewMilliQuantity(int64(change), resource.DecimalExponent)
 			quantity.Add(*changeQuantity)
 

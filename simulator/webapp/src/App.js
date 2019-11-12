@@ -88,7 +88,7 @@ class App extends React.Component {
 	render() {
 		const { classes } = this.props;
 		let pressureMarks = [{value: 1, label: "1"}, {value: 10, label: "10"}, {value: 15, label: "15"}];
-		let pumpMarks = [{value: 0, label: "0"}, {value: 5, label: "5"}];
+		let pumpMarks = [{value: 0, label: "0"}, {value: 3, label: "3"}, {value: 6, label: "6"}];
 
 		if (this.state.modules == null || this.state.modules.length < 1) {
 			return (
