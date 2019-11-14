@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"math"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -88,13 +87,10 @@ func (r *PressureController) ReconcilePressure(pressureDevice v1.Device) error {
 }
 
 func calculateActivePumps(pressure float64) *int32 {
-	// We have 5 pumps, and don't want the pressure to exceed 0.5 in either direction
-	count := 3 + (10.0-pressure)*(3/0.5)
-	count = math.Max(count, 0)
-	count = math.Min(count, 6)
-	count = math.Round(count)
-	result := int32(count)
-	return &result
+	// TODO: implement
+	//result := int32(activePumps)
+	//return &result
+	return nil
 }
 
 func (r *PressureController) SetupWithManager(mgr ctrl.Manager) error {

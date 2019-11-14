@@ -72,7 +72,7 @@ func TestConvert(t *testing.T) {
 				return
 			}
 			if !reflect.DeepEqual(got, expected) {
-				t.Errorf("got unpexpect converted object: %s", diff.StringDiff(marshal(expected), marshal(got)))
+				t.Errorf("got unexpected converted object: %s", diff.StringDiff(marshal(expected), marshal(got)))
 			}
 
 			roundtripped, err := convert(got, obj.GetObjectKind().GroupVersionKind().GroupVersion().String())
