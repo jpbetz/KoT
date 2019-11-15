@@ -82,7 +82,7 @@ func TestConvert(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(obj, roundtripped) {
-				t.Errorf("got unpexpect roundtripped object: %s", diff.StringDiff(marshal(obj), marshal(roundtripped)))
+				t.Errorf("got unpexpect roundtripped object\nJSON diff (A expected, B got): %s\nGo reflect diff (a expected, b got): %s", diff.StringDiff(marshal(obj), marshal(roundtripped)), diff.ObjectReflectDiff(obj, roundtripped))
 			}
 		})
 	}
@@ -126,7 +126,10 @@ func TestRoundTrip(t *testing.T) {
 					}
 
 					if jx, jback := marshal(x), marshal(back); jx != jback {
-						t.Errorf("roundtrip failed: %s", diff.StringDiff(jx, jback))
+						t.Errorf("roundtrip failed with different JSON (A expected, B got): %s", diff.StringDiff(jx, jback))
+					}
+					if !reflect.DeepEqual(x, back) {
+						t.Errorf("roudntrip failed (a expected, b got): %s", diff.ObjectReflectDiff(x, back))
 					}
 				}
 			})
