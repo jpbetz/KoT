@@ -46,5 +46,5 @@ spec:
       serviceAccountName: deepsea-controllers
       containers:
         - name: deapsea-controllers-container
-          image: gcr.io/jpbetz-public-images/deepsea-controllers@sha256:c689a59ac7d5333676ae412dcf0eedfeaea5084ad1c88c6a74b620012bb39ad2
+          image: gcr.io/jpbetz-public-images/deepsea-controllers@sha256:d93b9e67b2dbe25cb2d97d6e9e2f4ed5e8ef96392d120aa801d4fe603c5f66f1
           command: ["/manager"]

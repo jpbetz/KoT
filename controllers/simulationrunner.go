@@ -81,10 +81,9 @@ func (s *SimulationRunner) Start(stopCh <-chan struct{}) error {
 			pressure, ok = getOutput(&pressureDevice, "pressure")
 			if !ok {
 				value := resource.NewQuantity(10, resource.DecimalSI)
-				pressure = &v1alpha1.Value{Name: "pressure", Value: *value}
+				pressure = &v1alpha1.Value{Name: "pressure", Value: *value, Type: v1alpha1.FloatType}
 				pressureDevice.Status.Outputs = append(pressureDevice.Status.Outputs, *pressure)
 			}
-			pressure.Type = v1alpha1.FloatType
 			quantity := &pressure.Value
 			changeQuantity := resource.NewMilliQuantity(int64(change), resource.DecimalExponent)
 			quantity.Add(*changeQuantity)
@@ -107,7 +106,7 @@ func calculatePressureChange(pumpsActive int64) float64 {
 	// Use a wave to simulate environmental pressure changes.
 	freq := 1e-10 // ~1 minute period
 	amp := 200.0  // ~4 bars amplitude
-	n := time.Now().UnixNano() + int64(rand.Intn(1000) - 500)
+	n := time.Now().UnixNano() + int64(rand.Intn(1000)-500)
 	simPressureChange := math.Sin(freq*float64(n)) * amp
 
 	// 2.5 pumps are required for equilibrium
