@@ -93,7 +93,7 @@ spec:
         secret:
           secretName: admission-serving-cert
 ---
-apiVersion: admissionregistration.k8s.io/v1
+apiVersion: admissionregistration.k8s.io/v1beta1
 kind: ValidatingWebhookConfiguration
 metadata:
   name: deepsea.kubecon.io

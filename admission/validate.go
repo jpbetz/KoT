@@ -100,13 +100,8 @@ func ModuleValidation(informers informers.SharedInformerFactory) func(http.Respo
 		switch module := review.Request.Object.Object.(type) {
 		case *deepseev1alpha1.Module:
 			var errs []error
-			_, err := devicesLister.Devices(module.Namespace).Get(module.Spec.Devices.PressureSensor)
-			errs = append(errs, err)
-			_, err = devicesLister.Devices(module.Namespace).Get(module.Spec.Devices.Pump)
-			errs = append(errs, err)
-			_, err = devicesLister.Devices(module.Namespace).Get(module.Spec.Devices.WaterAlarm)
-			errs = append(errs, err)
-
+			_ = devicesLister
+			_ = module
 			err = utilerrors.NewAggregate(errs)
 			if err != nil {
 				review.Response.Result = &metav1.Status{
