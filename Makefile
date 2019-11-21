@@ -38,21 +38,33 @@ push-simulator:
 		docker push $(DOCKER_ORG)/deepsea-simulator:latest
 		sed 's,image: .*$$,image: $(DOCKER_ORG)/deepsea-simulator@'$$(docker inspect --format='{{index .RepoDigests 0}}' $(DOCKER_ORG)/deepsea-simulator | cut -f2 -d@)',' simulator/manifests.yaml > simulator/manifests.yaml.updated && mv simulator/manifests.yaml.updated simulator/manifests.yaml
 
-.PHONY: cloudbuild-conversion
-cloudbuild-conversion:
-		gcloud builds submit --config cloudbuild/conversion.yaml .
+.PHONY: cloudbuild-conversion-set-image
+cloudbuild-conversion-set-image:
+		#gcloud builds submit --config hack/cloudbuild/conversion.yaml .
+		name=$$(gcloud container images list --filter "name:things-conversion-webhook" --format='value(name)'); \
+		image=$$(gcloud container images describe $${name}:latest --format='value(image_summary.fully_qualified_digest)'); \
+		sed 's,image: .*$$,image:'$${image}',' conversion/manifests.yaml > conversion/manifests.yaml.updated && mv conversion/manifests.yaml.updated conversion/manifests.yaml
 
-.PHONY: cloudbuild-admission
-cloudbuild-admission:
-		gcloud builds submit --config cloudbuild/admission.yaml .
+.PHONY: cloudbuild-admission-set-image
+cloudbuild-admission-set-image:
+		#gcloud builds submit --config hack/cloudbuild/admission.yaml .
+		name=$$(gcloud container images list --filter "name:deepsea-admission-webhook" --format='value(name)'); \
+		image=$$(gcloud container images describe $${name}:latest --format='value(image_summary.fully_qualified_digest)'); \
+		sed 's,image: .*$$,image:'$${image}',' admission/manifests.yaml > admission/manifests.yaml.updated && mv admission/manifests.yaml.updated admission/manifests.yaml
 
-.PHONY: cloudbuild-controllers
-cloudbuild-controllers:
-		gcloud builds submit --config cloudbuild/controllers.yaml .
+.PHONY: cloudbuild-controllers-set-image
+cloudbuild-controllers-set-image:
+		#gcloud builds submit --config hack/cloudbuild/controllers.yaml .
+		name=$$(gcloud container images list --filter "name:deepsea-controllers" --format='value(name)'); \
+		image=$$(gcloud container images describe $${name}:latest --format='value(image_summary.fully_qualified_digest)'); \
+		sed 's,image: .*$$,image:'$${image}',' controllers/manifests.yaml > controllers/manifests.yaml.updated && mv controllers/manifests.yaml.updated controllers/manifests.yaml
 
-.PHONY: cloudbuild-simulator
-cloudbuild-simulator:
-		gcloud builds submit --config cloudbuild/simulator.yaml .
+.PHONY: cloudbuild-simulator-set-image
+cloudbuild-simulator-set-image:
+		#gcloud builds submit --config hack/cloudbuild/simulator.yaml .
+		name=$$(gcloud container images list --filter "name:deepsea-simulator" --format='value(name)'); \
+		image=$$(gcloud container images describe $${name}:latest --format='value(image_summary.fully_qualified_digest)'); \
+		sed 's,image: .*$$,image:'$${image}',' simulator/manifests.yaml > simulator/manifests.yaml.updated && mv simulator/manifests.yaml.updated simulator/manifests.yaml
 
 
 clean:
