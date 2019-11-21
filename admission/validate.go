@@ -102,6 +102,9 @@ func ModuleValidation(informers informers.SharedInformerFactory) func(http.Respo
 			var errs []error
 			_ = devicesLister
 			_ = module
+
+			// put your admission logic here
+
 			err = utilerrors.NewAggregate(errs)
 			if err != nil {
 				review.Response.Result = &metav1.Status{
