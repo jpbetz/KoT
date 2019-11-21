@@ -67,5 +67,6 @@ spec:
       containers:
         - name: deapsea-simulator-container
           image: gcr.io/jpbetz-public-images/deepsea-simulator@sha256:cdc9ee4e0ff56e00aa810539ee8dc9010aef14652ac27edd0fa1d13076f0e58b
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8085

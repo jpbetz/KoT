@@ -54,7 +54,7 @@ spec:
       containers:
       - name: webhook
         image: docker.io/sttts/things-conversion-webhook@sha256:3e6f9d96254e462b1690fec716cc2b471915af8c759dfe5d91afd7fe9fd60c9e
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         command: ["/conversion-webhook"]
         args:
         - --cert-dir=/tmp/certs

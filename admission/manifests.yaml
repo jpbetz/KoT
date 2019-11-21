@@ -75,8 +75,8 @@ spec:
       serviceAccountName: admission-webhook
       containers:
       - name: webhook
-        image: docker.io/sttts/deepsea-admission-webhook@sha256:f21f816a521be65836cab246aff94977010951d7f6184a1b9972ff3c82ce3f61
-        imagePullPolicy: Always
+        image: docker.io/sttts/deepsea-admission-webhook@sha256:bf0471fdcf86343aed1297f8dbfff54c41d1bff06dbda1e10adaa87b7c7892e1
+        imagePullPolicy: IfNotPresent
         command: ["/admission-webhook"]
         args:
         - --cert-dir=/tmp/certs
