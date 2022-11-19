@@ -7,7 +7,7 @@
     "@material-ui/icons": "^4.5.1",
     "react": "^16.11.0",
     "react-dom": "^16.11.0",
-    "react-scripts": "3.2.0",
+    "react-scripts": "5.0.1",
     "reconnecting-websocket": "^4.2.0",
     "typescript": "^3.6.4"
   },
